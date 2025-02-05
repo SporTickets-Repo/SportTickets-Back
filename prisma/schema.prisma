@@ -9,26 +9,25 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  document     String
-  documentType String
-  name         String
-  email        String   @unique
-  passwordHash String
-  phone        String
-  gender       String
-  role         String
-  bornAt       DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id           String    @id @default(uuid()) @db.Uuid
+  document     String?
+  documentType String?
+  name         String?
+  email        String    @unique
+  password     String
+  phone        String?
+  gender       String?
+  role         String?
+  bornAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  events String
+  events String?
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
+  companyId String?  @db.Uuid
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  tickets Ticket[] @relation("UserTickets")
-
+  tickets        Ticket[] @relation("UserTickets")
   partnerTickets Ticket[] @relation("PartnerTickets")
 }
 
@@ -44,7 +43,7 @@ model Company {
 
 model Event {
   id        String  @id @default(uuid()) @db.Uuid
-  companyId String
+  companyId String  @db.Uuid
   company   Company @relation(fields: [companyId], references: [id])
 
   name           String
@@ -59,7 +58,7 @@ model Event {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  bracketId String
+  bracketId String  @db.Uuid
   bracket   Bracket @relation(fields: [bracketId], references: [id])
 
   ticketTypes TicketType[]
@@ -68,7 +67,7 @@ model Event {
 
 model TicketType {
   id      String @id @default(uuid()) @db.Uuid
-  eventId String
+  eventId String @db.Uuid
   event   Event  @relation(fields: [eventId], references: [id])
 
   name        String
@@ -84,26 +83,25 @@ model TicketType {
 }
 
 model Ticket {
-  id String @id @default(uuid()) @db.Uuid
-
-  userId String
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
   user   User   @relation("UserTickets", fields: [userId], references: [id])
 
-  ticketTypeId String
+  ticketTypeId String     @db.Uuid
   ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
 
   price Float
 
-  transactionId String
+  transactionId String      @db.Uuid
   transaction   Transaction @relation(fields: [transactionId], references: [id])
 
-  partnerId String?
+  partnerId String? @db.Uuid
   partner   User?   @relation("PartnerTickets", fields: [partnerId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  couponId String?
+  couponId String? @db.Uuid
   coupon   Coupon? @relation(fields: [couponId], references: [id])
 }
 
@@ -116,9 +114,8 @@ model Transaction {
 }
 
 model Coupon {
-  id String @id @default(uuid()) @db.Uuid
-
-  eventId String
+  id      String @id @default(uuid()) @db.Uuid
+  eventId String @db.Uuid
   event   Event  @relation(fields: [eventId], references: [id])
 
   name       String
@@ -140,7 +137,7 @@ model Bracket {
 
 model Category {
   id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String
+  ticketTypeId String     @db.Uuid
   ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
 
   title       String
@@ -150,7 +147,7 @@ model Category {
 
 model PersonalizedFields {
   id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String
+  ticketTypeId String     @db.Uuid
   ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
 
   type         String
@@ -161,7 +158,7 @@ model PersonalizedFields {
 
 model TicketLot {
   id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String
+  ticketTypeId String     @db.Uuid
   ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
 
   name      String
