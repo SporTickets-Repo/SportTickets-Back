@@ -17,34 +17,30 @@ model User {
   password     String
   phone        String?
   gender       String?
-  role         String?
+  role         Role      @default(USER)
   bornAt       DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  events String?
+  siteUrl     String?
+  logoUrl     String?
+  fantasyName String?
 
-  companyId String?  @db.Uuid
-  company   Company? @relation(fields: [companyId], references: [id])
-
-  tickets        Ticket[] @relation("UserTickets")
-  partnerTickets Ticket[] @relation("PartnerTickets")
+  tickets Ticket[] @relation("UserTickets")
+  Event   Event[]
 }
 
-model Company {
-  id          String @id @default(uuid()) @db.Uuid
-  siteUrl     String
-  logoUrl     String
-  fantasyName String
-
-  users  User[]
-  events Event[]
+enum Role {
+  MASTER
+  ADMIN
+  PARTNER
+  USER
 }
 
 model Event {
-  id        String  @id @default(uuid()) @db.Uuid
-  companyId String  @db.Uuid
-  company   Company @relation(fields: [companyId], references: [id])
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
 
   name           String
   place          String
@@ -95,14 +91,11 @@ model Ticket {
   transactionId String      @db.Uuid
   transaction   Transaction @relation(fields: [transactionId], references: [id])
 
-  partnerId String? @db.Uuid
-  partner   User?   @relation("PartnerTickets", fields: [partnerId], references: [id])
+  couponId String? @db.Uuid
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  couponId String? @db.Uuid
-  coupon   Coupon? @relation(fields: [couponId], references: [id])
 }
 
 model Transaction {
