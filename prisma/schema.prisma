@@ -43,6 +43,7 @@ model Event {
   user   User   @relation(fields: [userId], references: [id])
 
   name           String
+  slug           String
   place          String
   title          String
   description    String
