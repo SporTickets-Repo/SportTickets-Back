@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -19,13 +20,13 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: RegisterDto) {
-    return this.authService.register(body.email, body.password);
+    return this.authService.register(body);
   }
 
   @Post('login')
   async login(@Body() body: LoginDto) {
-    const user = await this.authService.validateUserByEmail(
-      body.email,
+    const user = await this.authService.validateUserByIdentifier(
+      body.identifier,
       body.password,
     );
     if (!user) {
