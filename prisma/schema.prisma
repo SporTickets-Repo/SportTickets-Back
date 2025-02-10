@@ -16,7 +16,7 @@ model User {
   email           String    @unique
   password        String
   phone           String?   @unique
-  gender          String?
+  sex             Sex       @default(FEMALE)
   role            Role      @default(USER)
   bornAt          DateTime?
   cep             String
@@ -37,6 +37,11 @@ enum Role {
   ADMIN
   PARTNER
   USER
+}
+
+enum Sex {
+  MALE
+  FEMALE
 }
 
 model Event {

@@ -48,6 +48,10 @@ export class RegisterDto {
   })
   profileImageUrl: string;
 
+  @IsNotEmpty()
+  @IsString()
+  sex: Sex;
+
   @IsString()
   @Optional()
   @ApiProperty({ example: '12345678900', description: 'User phone number.' })
