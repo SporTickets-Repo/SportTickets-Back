@@ -1,3 +1,4 @@
+import { Sex } from '@prisma/client';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class RegisterDto {
@@ -31,6 +32,10 @@ export class RegisterDto {
   @IsNotEmpty()
   @IsString()
   profileImageUrl: string;
+
+  @IsNotEmpty()
+  @IsString()
+  sex: Sex;
 
   @IsString()
   phone?: string;
