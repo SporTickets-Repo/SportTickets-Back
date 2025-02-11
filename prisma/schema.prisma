@@ -9,27 +9,183 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  document        String    @unique
-  documentType    String?
-  name            String?
-  email           String    @unique
+  id              String       @id @default(uuid()) @db.Uuid
+  email           String       @unique
+  phone           String?      @unique
+  document        String       @unique
+  documentType    DocumentType @default(CPF)
+  name            String
   password        String
-  phone           String?   @unique
-  sex             Sex       @default(FEMALE)
-  role            Role      @default(USER)
+  sex             Sex          @default(FEMALE)
+  role            Role         @default(USER)
   bornAt          DateTime?
-  cep             String
+  cep             String?
   profileImageUrl String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
   siteUrl         String?
   logoUrl         String?
   fantasyName     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  tickets Ticket[] @relation("UserTickets")
-  Event   Event[]
+  tickets Ticket[]
+  events  Event[]
+
+  eventDashboardAccess EventDashboardAccess[]
+  Coupon               Coupon[]
+}
+
+model Event {
+  id             String      @id @default(uuid()) @db.Uuid
+  createdBy      String      @db.Uuid
+  slug           String      @unique
+  status         EventStatus @default(DRAFT)
+  name           String
+  place          String
+  title          String
+  description    String
+  regulation     String?
+  additionalInfo String?
+  bannerUrl      String?
+  endDate        DateTime
+  startDate      DateTime
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user User @relation(fields: [createdBy], references: [id])
+
+  ticketTypes TicketType[]
+  coupons     Coupon[]
+
+  eventDashboardAccess EventDashboardAccess[]
+
+  bracket Bracket[]
+}
+
+model Transaction {
+  id         String            @id @default(uuid()) @db.Uuid
+  status     TransactionStatus @default(PENDING)
+  totalValue Decimal
+
+  tickets Ticket[]
+}
+
+model Coupon {
+  id         String    @id @default(uuid()) @db.Uuid
+  eventId    String    @db.Uuid
+  createdBy  String    @db.Uuid
+  name       String
+  percentage Decimal
+  quantity   Int
+  deletedAt  DateTime?
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [createdBy], references: [id])
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  transactionId String   @db.Uuid
+  ticketLotId   String   @db.Uuid
+  categoryId    String   @db.Uuid
+  couponId      String   @db.Uuid
+  price         Decimal
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  ticketLot   TicketLot   @relation(fields: [ticketLotId], references: [id])
+  category    Category    @relation("TicketToCategory", fields: [categoryId], references: [id])
+  coupon      Coupon      @relation(fields: [couponId], references: [id])
+
+  personalizedFieldAnswers PersonalizedFieldAnswer[]
+}
+
+model Bracket {
+  id       String  @id @default(uuid()) @db.Uuid
+  eventId  String  @db.Uuid
+  name     String
+  url      String
+  isActive Boolean
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model Category {
+  id           String @id @default(uuid()) @db.Uuid
+  ticketTypeId String @db.Uuid
+  title        String
+  description  String
+  quantity     Int
+
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  tickets Ticket[] @relation("TicketToCategory")
+}
+
+model TicketType {
+  id          String      @id @default(uuid()) @db.Uuid
+  eventId     String      @db.Uuid
+  name        String
+  description String
+  restriction Restriction @default(SAME_CATEGORY)
+  userType    UserType    @default(ATHLETE)
+  mode        Mode        @default(DUO)
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  categories         Category[]
+  personalizedFields PersonalizedField[]
+  ticketLots         TicketLot[]
+}
+
+model PersonalizedField {
+  id           String @id @default(uuid()) @db.Uuid
+  ticketTypeId String @db.Uuid
+  type         String
+  requestTitle String
+  optionsList  Json?
+
+  ticketType TicketType                @relation(fields: [ticketTypeId], references: [id])
+  answers    PersonalizedFieldAnswer[]
+}
+
+model PersonalizedFieldAnswer {
+  id                  String @id @default(uuid()) @db.Uuid
+  personalizedFieldId String @db.Uuid
+  ticketId            String @db.Uuid
+  answer              String
+
+  personalizedField PersonalizedField @relation(fields: [personalizedFieldId], references: [id])
+  ticket            Ticket            @relation(fields: [ticketId], references: [id])
+}
+
+model TicketLot {
+  id           String   @id @default(uuid()) @db.Uuid
+  ticketTypeId String   @db.Uuid
+  name         String
+  price        Decimal
+  quantity     Int
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  tickets    Ticket[]
+}
+
+model EventDashboardAccess {
+  id      String @id @default(uuid()) @db.Uuid
+  userId  String @db.Uuid
+  eventId String @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
 }
 
 enum Role {
@@ -44,130 +200,35 @@ enum Sex {
   FEMALE
 }
 
-model Event {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user   User   @relation(fields: [userId], references: [id])
-
-  name           String
-  slug           String
-  place          String
-  title          String
-  description    String
-  regulation     String
-  additionalInfo String
-  bannerUrl      String
-  endDate        DateTime
-  startDate      DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  bracketId String?  @db.Uuid
-  bracket   Bracket? @relation(fields: [bracketId], references: [id])
-
-  ticketTypes TicketType[]
-  coupons     Coupon[]
+enum DocumentType {
+  CPF
 }
 
-model TicketType {
-  id      String @id @default(uuid()) @db.Uuid
-  eventId String @db.Uuid
-  event   Event  @relation(fields: [eventId], references: [id])
-
-  name        String
-  restriction String
-  userType    String
-  description String
-  mode        String
-
-  tickets            Ticket[]
-  categories         Category[]
-  personalizedFields PersonalizedFields[]
-  ticketLots         TicketLot[]
+enum EventStatus {
+  DRAFT
+  PROGRESS
+  CANCELLED
+  FINISHED
 }
 
-model Ticket {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user   User   @relation("UserTickets", fields: [userId], references: [id])
-
-  ticketTypeId String     @db.Uuid
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
-
-  price Float
-
-  transactionId String      @db.Uuid
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
-
-  couponId String? @db.Uuid
-  coupon   Coupon? @relation(fields: [couponId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum TransactionStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
 }
 
-model Transaction {
-  id         String @id @default(uuid()) @db.Uuid
-  status     String
-  totalValue Float
-
-  tickets Ticket[]
+enum Restriction {
+  NONE
+  SAME_CATEGORY
 }
 
-model Coupon {
-  id      String @id @default(uuid()) @db.Uuid
-  eventId String @db.Uuid
-  event   Event  @relation(fields: [eventId], references: [id])
-
-  name       String
-  percentage Float
-  quantity   Int
-  deletedAt  DateTime?
-
-  tickets Ticket[]
+enum UserType {
+  ATHLETE
+  VIEWER
 }
 
-model Bracket {
-  id       String  @id @default(uuid()) @db.Uuid
-  url      String
-  isActive Boolean
-  nome     String
-
-  events Event[]
-}
-
-model Category {
-  id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String     @db.Uuid
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
-
-  title       String
-  description String
-  quantity    Int
-}
-
-model PersonalizedFields {
-  id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String     @db.Uuid
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
-
-  type         String
-  requestTitle String
-  answer       String
-  optionsList  String
-}
-
-model TicketLot {
-  id           String     @id @default(uuid()) @db.Uuid
-  ticketTypeId String     @db.Uuid
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
-
-  name      String
-  price     Float
-  quantity  Int
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum Mode {
+  INDIVUAL
+  DUO
 }
