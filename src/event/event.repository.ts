@@ -6,9 +6,16 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class EventRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createEvent(data): Promise<Event> {
+  async createEvent(data, userId): Promise<Event> {
     return this.prisma.event.create({
-      data,
+      data: {
+        ...data,
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+      },
     });
   }
 

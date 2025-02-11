@@ -7,8 +7,8 @@ import { EventRepository } from './event.repository';
 export class EventService {
   constructor(private readonly eventRepository: EventRepository) {}
 
-  async create(createEventDto: CreateEventDto) {
-    return this.eventRepository.createEvent(createEventDto);
+  async create(createEventDto: CreateEventDto, userId) {
+    return this.eventRepository.createEvent(createEventDto, userId);
   }
 
   async getOne(id: string) {
@@ -25,6 +25,8 @@ export class EventService {
   }
 
   async getUserEvents(userId: string) {
+    console.log('userId', userId);
+
     return this.eventRepository.findUserEvents(userId);
   }
 

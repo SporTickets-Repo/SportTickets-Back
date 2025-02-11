@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -21,20 +22,14 @@ import { EventService } from './event.service';
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER, Role.MASTER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @Post()
   async createEvent(@Body() createEventDto: CreateEventDto, @Request() req) {
-    return this.eventService.create(createEventDto);
+    return this.eventService.create(createEventDto, req.user.id);
   }
 
-  @Get(':id')
-  async getEvent(@Param('id') id: string) {
-    return this.eventService.getOne(id);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER, Role.MASTER)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @Put(':id')
   async updateEvent(
     @Param('id') id: string,
@@ -43,8 +38,7 @@ export class EventController {
     return this.eventService.update(id, updateEventDto);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.MASTER)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @Delete(':id')
   async deleteEvent(@Param('id') id: string) {
     return this.eventService.delete(id);
@@ -55,8 +49,16 @@ export class EventController {
     return this.eventService.getAll(query);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @Get('my-events')
-  async getMyEvents(@Query('userId') userId: string) {
-    return this.eventService.getUserEvents(userId);
+  async getMyEvents(@Request() req) {
+    return this.eventService.getUserEvents(req.user.id);
+  }
+
+  @Roles(Role.ADMIN, Role.PARTNER)
+  @Get(':id')
+  async getEvent(@Param('id') id: string) {
+    return this.eventService.getOne(id);
   }
 }
