@@ -62,8 +62,8 @@ model Event {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  bracketId String  @db.Uuid
-  bracket   Bracket @relation(fields: [bracketId], references: [id])
+  bracketId String?  @db.Uuid
+  bracket   Bracket? @relation(fields: [bracketId], references: [id])
 
   ticketTypes TicketType[]
   coupons     Coupon[]
