@@ -23,10 +23,10 @@ model User {
   profileImageUrl String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
   siteUrl         String?
   logoUrl         String?
   fantasyName     String?
+  trainingCenter  String?
 
   tickets Ticket[] @relation("UserTickets")
   Event   Event[]

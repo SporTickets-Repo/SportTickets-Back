@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Request,
   UnauthorizedException,
   UseGuards,
@@ -13,10 +14,11 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   async register(@Body() body: RegisterDto) {
@@ -24,7 +26,7 @@ export class AuthController {
     if (body.password !== body.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
-    
+
     return this.authService.register(body);
   }
 
@@ -40,7 +42,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me')
   getMe(@Request() req: { user: User }) {
     return req.user;
