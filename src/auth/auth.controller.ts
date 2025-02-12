@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Post,
-  Query,
   Request,
   UnauthorizedException,
   UseGuards,
