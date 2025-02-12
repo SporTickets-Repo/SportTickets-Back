@@ -3,10 +3,11 @@ import { AuthModule } from './auth/auth.module';
 import { BlobModule } from './blob/blob.module';
 import { PrismaService } from './prisma/prisma.service';
 import { EventModule } from './event/event.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [AuthModule, BlobModule, EventModule],
+  imports: [AuthModule, BlobModule, EventModule, UserModule],
   controllers: [],
   providers: [PrismaService],
 })
-export class AppModule {}
+export class AppModule { }
