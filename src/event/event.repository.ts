@@ -1,20 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Event, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createEvent(data, userId): Promise<Event> {
+  async createEvent(data: CreateEventDto, userId: string): Promise<Event> {
     return this.prisma.event.create({
       data: {
         ...data,
-        user: {
-          connect: {
-            id: userId,
-          },
-        },
+        createdBy: userId,
       },
     });
   }
@@ -42,7 +39,7 @@ export class EventRepository {
 
   async findUserEvents(userId: string): Promise<Event[]> {
     return this.prisma.event.findMany({
-      where: { userId },
+      where: { createdBy: userId },
       include: {
         ticketTypes: true,
         coupons: true,

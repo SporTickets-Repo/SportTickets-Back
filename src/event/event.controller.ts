@@ -10,7 +10,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -25,7 +25,10 @@ export class EventController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Post()
-  async createEvent(@Body() createEventDto: CreateEventDto, @Request() req) {
+  async createEvent(
+    @Body() createEventDto: CreateEventDto,
+    @Request() req: { user: User },
+  ) {
     return this.eventService.create(createEventDto, req.user.id);
   }
 
@@ -52,7 +55,7 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Get('my-events')
-  async getMyEvents(@Request() req) {
+  async getMyEvents(@Request() req: { user: User }) {
     return this.eventService.getUserEvents(req.user.id);
   }
 
