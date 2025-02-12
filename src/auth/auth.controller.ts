@@ -39,10 +39,4 @@ export class AuthController {
     }
     return this.authService.login(user);
   }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('me')
-  getMe(@Request() req: { user: User }) {
-    return req.user;
-  }
 }
