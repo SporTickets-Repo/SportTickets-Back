@@ -12,13 +12,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
-import { isUUID } from 'class-validator';
+import { isURL, isUUID } from 'class-validator';
 import 'multer';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { BlobService } from './blob.service';
-import { DeleteBlobDto } from './dto/delete-blob.dto';
 import { UploadBlobDto } from './dto/upload-blob.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,7 +46,7 @@ export class BlobController {
   }
 
   @Roles(Role.ADMIN)
-  @Get('list-all')
+  @Get('list/all')
   async listAllFiles() {
     return this.blobService.listFiles();
   }
@@ -67,13 +66,21 @@ export class BlobController {
   }
 
   @Roles(Role.MASTER)
-  @Delete('delete')
-  async deleteFile(@Body() payload: DeleteBlobDto) {
-    return this.blobService.deleteFile(payload.url);
+  @Delete('delete/:url')
+  async deleteFile(@Param('url') url: string) {
+    if (!url) {
+      throw new BadRequestException('url should not be empty');
+    }
+
+    if (!isURL(url)) {
+      throw new BadRequestException('url should be a valid URL');
+    }
+
+    return this.blobService.deleteFile(url);
   }
 
   @Roles(Role.MASTER)
-  @Delete('delete-all')
+  @Delete('delete/all')
   async deleteAllFiles() {
     return this.blobService.deleteAllFiles();
   }
