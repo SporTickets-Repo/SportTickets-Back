@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -53,7 +54,13 @@ export class UserController {
         email: { type: 'string', format: 'email', example: 'lucass@gmail.com' },
         bornAt: { type: 'string', format: 'date', example: '1990-01-01' },
         cep: { type: 'string', example: '12345-678' },
-        sex: { type: 'string', enum: [Sex], example: 'MALE' },
+        sex: {
+          type: 'string',
+          enum: [Sex.FEMALE, Sex.MALE],
+          example: Sex.MALE,
+          default: Sex.MALE,
+          nullable: false,
+        },
         phone: { type: 'string', example: '61995585555' },
         imageFile: {
           type: 'string',
@@ -70,7 +77,7 @@ export class UserController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file && !file.mimetype.startsWith('image')) {
-      throw new Error('Invalid image file');
+      throw new BadRequestException('Invalid image file');
     }
 
     return this.userService.updateUser(req.user, body, file);

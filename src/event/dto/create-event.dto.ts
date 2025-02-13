@@ -63,13 +63,7 @@ export class CreateEventDto {
   })
   additionalInfo?: string;
 
-  @IsString()
-  @IsOptional()
-  @ApiProperty({
-    example: 'www.imageexample.com/image',
-    description: 'URL of the event banner',
-  })
-  bannerUrl?: string;
+  bannerUrl?: string | null;
 
   @IsDateString()
   @IsNotEmpty()
@@ -77,7 +71,7 @@ export class CreateEventDto {
     example: '2022-01-01T00:00:00.000Z',
     description: 'Start date of the event',
   })
-  startDate: string;
+  startDate: Date;
 
   @IsDateString()
   @IsNotEmpty()
@@ -85,5 +79,5 @@ export class CreateEventDto {
     example: '2022-01-01T00:00:00.000Z',
     description: 'End date of the event',
   })
-  endDate: string;
+  endDate: Date;
 }

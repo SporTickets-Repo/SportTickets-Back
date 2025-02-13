@@ -65,14 +65,7 @@ export class UpdateEventDto {
   })
   additionalInfo?: string;
 
-  @IsString()
-  @IsOptional()
-  @ApiProperty({
-    example: 'www.imageexample.com/image',
-    description: 'URL of the event banner',
-    required: false,
-  })
-  bannerUrl?: string;
+  bannerUrl?: string | null;
 
   @IsDateString()
   @IsOptional()
