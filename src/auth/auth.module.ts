@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { BlobService } from 'src/blob/blob.service';
+import { AppConfigModule } from 'src/config/config.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthRepository } from './auth.repository';
@@ -14,8 +16,15 @@ import { JwtStrategy } from './jwt.strategy';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
+    AppConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy, PrismaService],
+  providers: [
+    AuthService,
+    AuthRepository,
+    JwtStrategy,
+    PrismaService,
+    BlobService,
+  ],
 })
 export class AuthModule {}
