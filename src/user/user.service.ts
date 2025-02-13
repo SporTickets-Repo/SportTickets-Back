@@ -51,9 +51,9 @@ export class UserService {
     }
 
     if (file) {
-      const result = updateUserDto.profileImageUrl
+      const result = user.profileImageUrl
         ? await this.blobService.updateFile(
-            updateUserDto.profileImageUrl,
+            user.profileImageUrl,
             file.originalname,
             file.buffer,
             'public',
@@ -66,7 +66,9 @@ export class UserService {
             user.id,
           );
 
-      updateUserDto.profileImageUrl = result.url;
+      if (result) {
+        user.profileImageUrl = result.url;
+      }
     }
 
     const userToUpdate: User = {

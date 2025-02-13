@@ -40,10 +40,6 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  profileImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
   @ApiProperty({ example: '61995585555', description: 'User phone number.' })
   readonly phone?: string;
 }
