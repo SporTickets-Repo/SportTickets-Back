@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex } from '@prisma/client';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -23,7 +23,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @ApiProperty({ example: '1990-01-01', description: 'User date of birth.' })
-  readonly bornAt?: Date;
+  bornAt?: Date;
 
   @IsOptional()
   @IsString()
@@ -31,7 +31,7 @@ export class UpdateUserDto {
   readonly cep?: string;
 
   @IsOptional()
-  @IsString()
+  @IsEnum(Sex)
   @ApiProperty({
     example: 'MALE',
     description: 'User gender (MALE ou FEMALE).',
@@ -40,11 +40,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  @ApiProperty({
-    example: 'http://example.com/profile.jpg',
-    description: 'User profile image URL.',
-  })
-  readonly profileImageUrl?: string;
+  profileImageUrl?: string;
 
   @IsOptional()
   @IsString()

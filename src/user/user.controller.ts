@@ -4,8 +4,11 @@ import {
   Get,
   Patch,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -22,9 +25,17 @@ export class UserController {
     return req.user;
   }
 
+  @UseInterceptors(FileInterceptor('imageFile'))
   @Patch('update')
-  updateUser(@Request() req: { user: User }, @Body() body: UpdateUserDto) {
-    const userId = req.user.id;
-    return this.userService.updateUser(userId, body);
+  updateUser(
+    @Request() req: { user: User },
+    @Body() body: UpdateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file && !file.mimetype.startsWith('image')) {
+      throw new Error('Invalid image file');
+    }
+
+    return this.userService.updateUser(req.user, body, file);
   }
 }
