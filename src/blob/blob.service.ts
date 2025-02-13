@@ -18,11 +18,11 @@ export class BlobService {
     userId: string,
   ) {
     if (!fileName || !content || content.length === 0) {
-      throw new BadRequestException('Nome do arquivo ou conteúdo inválido.');
+      throw new BadRequestException('Invalid file name or content.');
     }
 
     if (!userId) {
-      throw new BadRequestException('ID do usuário é obrigatório.');
+      throw new BadRequestException('User ID is required.');
     }
 
     const token = this.configService.blobToken;
@@ -37,9 +37,7 @@ export class BlobService {
 
       return { fileName, url };
     } catch {
-      throw new InternalServerErrorException(
-        'Erro ao fazer upload do arquivo.',
-      );
+      throw new InternalServerErrorException('Error uploading file.');
     }
   }
 
@@ -50,8 +48,45 @@ export class BlobService {
       const files = await list({ token });
       return files.blobs;
     } catch {
-      throw new InternalServerErrorException('Erro ao listar os arquivos.');
+      throw new InternalServerErrorException('Error listing files.');
     }
+  }
+
+  async listUserFiles(userId: string) {
+    const token = this.configService.blobToken;
+
+    try {
+      const files = await list({
+        token,
+        prefix: `${userId}/`,
+      });
+
+      return files.blobs;
+    } catch {
+      throw new InternalServerErrorException('Error listing user files.');
+    }
+  }
+
+  async updateFile(
+    url: string | undefined | null,
+    fileName: string,
+    content: Buffer,
+    access: 'public' | 'private' = 'public',
+    userId: string,
+  ) {
+    const token = this.configService.blobToken;
+
+    if (!url) {
+      throw new BadRequestException('File URL is required.');
+    }
+
+    try {
+      await del(url, { token });
+    } catch {
+      throw new InternalServerErrorException('Error deleting file.');
+    }
+
+    return this.uploadFile(fileName, content, access, userId);
   }
 
   async deleteFile(url: string) {
@@ -61,35 +96,16 @@ export class BlobService {
     const fileToDelete = files.find((file) => file.url === url);
 
     if (!fileToDelete) {
-      throw new NotFoundException('Arquivo não encontrado.');
+      throw new NotFoundException('File not found.');
     }
 
     try {
       await del(url, { token });
     } catch {
-      throw new InternalServerErrorException('Erro ao deletar o arquivo.');
+      throw new InternalServerErrorException('Error deleting file.');
     }
 
-    return { message: 'Arquivo deletado com sucesso', url };
-  }
-
-  async updateFile(
-    url: string | undefined | null,
-    fileName: string,
-    content: Buffer,
-    access: 'public' | 'private' = 'public',
-  ) {
-    const token = this.configService.blobToken;
-
-    if (url) {
-      try {
-        await del(url, { token });
-      } catch {
-        throw new InternalServerErrorException('Erro ao deletar o arquivo.');
-      }
-    }
-
-    return this.uploadFile(fileName, content, access);
+    return { message: 'File successfully deleted', url };
   }
 
   async deleteAllFiles() {
@@ -98,15 +114,16 @@ export class BlobService {
     const files = await this.listFiles();
 
     try {
-      await Promise.all(
-        files.map(async (file) => {
-          await del(file.url, { token });
-        }),
-      );
+      if (files.length > 0) {
+        await del(
+          files.map((blob) => blob.url),
+          { token },
+        );
+      }
     } catch {
-      throw new InternalServerErrorException('Erro ao deletar os arquivos.');
+      throw new InternalServerErrorException('Error deleting all files.');
     }
 
-    return { message: 'Todos os arquivos foram deletados com sucesso' };
+    return { message: 'All files have been successfully deleted' };
   }
 }

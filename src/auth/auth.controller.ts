@@ -2,22 +2,16 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
   Post,
-  Request,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async register(@Body() body: RegisterDto) {

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
   UploadedFile,
   UseGuards,
@@ -11,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
+import { isUUID } from 'class-validator';
 import 'multer';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -45,9 +47,23 @@ export class BlobController {
   }
 
   @Roles(Role.ADMIN)
-  @Get('list')
-  async listFiles() {
+  @Get('list-all')
+  async listAllFiles() {
     return this.blobService.listFiles();
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('list/:userId')
+  async listFiles(@Param('userId') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('userId should not be empty');
+    }
+
+    if (!isUUID(userId)) {
+      throw new BadRequestException('userId should be a valid UUID');
+    }
+
+    return this.blobService.listUserFiles(userId);
   }
 
   @Roles(Role.MASTER)
