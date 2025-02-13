@@ -13,12 +13,6 @@ export class TicketTypeRepository {
   async findTicketTypeById(id: string): Promise<TicketType | null> {
     return this.prisma.ticketType.findUnique({
       where: { id },
-      include: {
-        categories: true,
-        personalizedFields: true,
-        ticketLots: true,
-        event: true,
-      },
     });
   }
 
@@ -26,24 +20,13 @@ export class TicketTypeRepository {
     return this.prisma.ticketType.findMany({
       skip,
       take,
-      include: {
-        categories: true,
-        personalizedFields: true,
-        ticketLots: true,
-        event: true,
-      },
+
     });
   }
 
   async findAllTicketTypesByEvent(eventId: string): Promise<TicketType[]> {
     return this.prisma.ticketType.findMany({
       where: { eventId },
-      include: {
-        categories: true,
-        personalizedFields: true,
-        ticketLots: true,
-        event: true,
-      },
     });
   }
 
