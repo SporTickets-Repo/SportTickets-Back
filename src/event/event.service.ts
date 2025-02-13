@@ -22,6 +22,12 @@ export class EventService {
     const endDate = new Date(createEventDto.endDate);
     let bannerUrl: string | null = null;
 
+    const existingSlug = await this.eventRepository.findEventBySlug(
+      createEventDto.slug,
+    );
+
+    if (existingSlug) throw new NotFoundException('Slug already exists');
+
     if (file) {
       try {
         const result = await this.blobService.uploadFile(
