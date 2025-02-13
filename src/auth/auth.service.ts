@@ -3,6 +3,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { BlobService } from 'src/blob/blob.service';
 import { isValidCPF, isValidPhone } from 'src/utils/validators';
 import { AuthRepository } from './auth.repository';
 import { RegisterDto } from './dto/register.dto';
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly authRepository: AuthRepository,
+    private readonly blobService: BlobService,
   ) {}
 
   async validateUserByIdentifier(
@@ -61,40 +63,43 @@ export class AuthService {
     };
   }
 
-  async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
-    const existingByEmail = await this.authRepository.findUserByEmail(
-      registerDto.email,
-    );
-    if (existingByEmail) {
-      throw new ConflictException('Email already exists');
-    }
+  async register(
+    registerDto: RegisterDto,
+    file: Express.Multer.File,
+  ): Promise<Omit<User, 'password'>> {
+    const [existingByEmail, existingByDocument, existingByPhone] =
+      await Promise.all([
+        this.authRepository.findUserByEmail(registerDto.email),
+        this.authRepository.findUserByDocument(registerDto.document),
+        registerDto.phone
+          ? this.authRepository.findUserByPhone(registerDto.phone)
+          : Promise.resolve(null),
+      ]);
 
-    const existingByDocument = await this.authRepository.findUserByDocument(
-      registerDto.document,
-    );
-
-    if (existingByDocument) {
-      throw new ConflictException('CPF already exists');
-    }
-
-    if (registerDto.phone) {
-      const existingByPhone = await this.authRepository.findUserByPhone(
-        registerDto.phone,
-      );
-      if (existingByPhone) {
-        throw new ConflictException('Phone already exists');
-      }
-    }
+    if (existingByEmail) throw new ConflictException('Email already exists');
+    if (existingByDocument) throw new ConflictException('CPF already exists');
+    if (existingByPhone) throw new ConflictException('Phone already exists');
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     const { confirmPassword, ...userData } = registerDto;
 
-    const newUser = await this.authRepository.createUser({
+    let newUser = await this.authRepository.createUser({
       ...userData,
       password: hashedPassword,
       bornAt: new Date(userData.bornAt),
     });
+
+    const uploadedFile = await this.blobService.uploadFile(
+      file.originalname,
+      file.buffer,
+      'public',
+      newUser.id,
+    );
+
+    newUser.profileImageUrl = uploadedFile.url;
+
+    newUser = await this.authRepository.updateUser(newUser.id, newUser);
 
     const { password: _, ...result } = newUser;
     return result;

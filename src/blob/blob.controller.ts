@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -13,7 +14,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
 import { isURL, isUUID } from 'class-validator';
-import 'multer';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -26,14 +26,14 @@ export class BlobController {
   constructor(private readonly blobService: BlobService) {}
 
   @Roles(Role.ADMIN)
-  @Post('upload')
+  @Post()
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Body() { userId }: UploadBlobDto,
   ) {
     if (!file) {
-      throw new BadRequestException('Nenhum arquivo enviado.');
+      throw new BadRequestException('No file uploaded.');
     }
 
     const result = await this.blobService.uploadFile(
@@ -42,7 +42,7 @@ export class BlobController {
       'public',
       userId,
     );
-    return { message: 'Arquivo enviado com sucesso!', ...result };
+    return { message: 'File uploaded successfully!', ...result };
   }
 
   @Roles(Role.ADMIN)
@@ -66,8 +66,8 @@ export class BlobController {
   }
 
   @Roles(Role.MASTER)
-  @Delete('delete/:url')
-  async deleteFile(@Param('url') url: string) {
+  @Delete()
+  async deleteFile(@Query('url') url: string) {
     if (!url) {
       throw new BadRequestException('url should not be empty');
     }
@@ -80,7 +80,7 @@ export class BlobController {
   }
 
   @Roles(Role.MASTER)
-  @Delete('delete/all')
+  @Delete('all')
   async deleteAllFiles() {
     return this.blobService.deleteAllFiles();
   }

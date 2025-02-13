@@ -4,7 +4,10 @@ import {
   Controller,
   Post,
   UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -13,13 +16,21 @@ import { RegisterDto } from './dto/register.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @UseInterceptors(FileInterceptor('imageFile'))
   @Post('register')
-  async register(@Body() body: RegisterDto) {
+  async register(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: RegisterDto,
+  ) {
     if (body.password !== body.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
 
-    return this.authService.register(body);
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    return this.authService.register(body, file);
   }
 
   @Post('login')

@@ -43,14 +43,6 @@ export class RegisterDto {
 
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({
-    example: 'http://example.com/image.jpg',
-    description: 'User profile image URL.',
-  })
-  profileImageUrl: string;
-
-  @IsNotEmpty()
-  @IsString()
   sex: Sex;
 
   @IsString()
