@@ -21,14 +21,19 @@ export class EventService {
     let bannerUrl: string | null = null;
 
     if (file) {
-      const result = await this.blobService.uploadFile(
-        file.originalname,
-        file.buffer,
-        'public',
-        userId,
-      );
-      if (result) {
-        bannerUrl = result.url;
+      try {
+        const result = await this.blobService.uploadFile(
+          file.originalname,
+          file.buffer,
+          'public',
+          userId,
+        );
+        if (result) {
+          bannerUrl = result.url;
+        }
+      } catch (error) {
+        console.error('Error uploading event file', error);
+        bannerUrl = null;
       }
     }
 

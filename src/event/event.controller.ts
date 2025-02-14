@@ -76,7 +76,7 @@ export class EventController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file && !file.mimetype.startsWith('image')) {
-      throw new Error('Invalid image file');
+      throw new BadRequestException('Invalid image file');
     }
 
     return this.eventService.create(createEventDto, req.user.id, file);
