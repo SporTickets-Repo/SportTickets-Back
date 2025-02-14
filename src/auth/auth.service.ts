@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { BlobService } from 'src/blob/blob.service';
 import { isValidCPF, isValidPhone } from 'src/utils/validators';
 import { AuthRepository } from './auth.repository';
 import { RegisterDto } from './dto/register.dto';
@@ -18,7 +21,6 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly authRepository: AuthRepository,
-    private readonly blobService: BlobService,
   ) {}
 
   async validateUserByIdentifier(
@@ -63,10 +65,7 @@ export class AuthService {
     };
   }
 
-  async register(
-    registerDto: RegisterDto,
-    file: Express.Multer.File,
-  ): Promise<Omit<User, 'password'>> {
+  async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([
         this.authRepository.findUserByEmail(registerDto.email),
@@ -84,22 +83,15 @@ export class AuthService {
 
     const { confirmPassword, ...userData } = registerDto;
 
-    let newUser = await this.authRepository.createUser({
+    const newUser = await this.authRepository.createUser({
       ...userData,
       password: hashedPassword,
       bornAt: new Date(userData.bornAt),
     });
 
-    const uploadedFile = await this.blobService.uploadFile(
-      file.originalname,
-      file.buffer,
-      'public',
-      newUser.id,
-    );
-
-    newUser.profileImageUrl = uploadedFile.url;
-
-    newUser = await this.authRepository.updateUser(newUser.id, newUser);
+    if (!newUser) {
+      throw new InternalServerErrorException('Error creating user');
+    }
 
     const { password: _, ...result } = newUser;
     return result;
