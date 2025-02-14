@@ -68,23 +68,27 @@ export class EventService {
     let bannerUrl = existingEvent.bannerUrl;
 
     if (file) {
-      const result = bannerUrl
-        ? await this.blobService.updateFile(
-            bannerUrl,
-            file.originalname,
-            file.buffer,
-            'public',
-            existingEvent.id,
-          )
-        : await this.blobService.uploadFile(
-            file.originalname,
-            file.buffer,
-            'public',
-            existingEvent.id,
-          );
+      try {
+        const result = bannerUrl
+          ? await this.blobService.updateFile(
+              bannerUrl,
+              file.originalname,
+              file.buffer,
+              'public',
+              existingEvent.id,
+            )
+          : await this.blobService.uploadFile(
+              file.originalname,
+              file.buffer,
+              'public',
+              existingEvent.id,
+            );
 
-      if (result) {
-        bannerUrl = result.url;
+        if (result) {
+          bannerUrl = result.url;
+        }
+      } catch (error) {
+        console.error('Error uploading event file', error);
       }
     }
 

@@ -51,23 +51,27 @@ export class UserService {
     }
 
     if (file) {
-      const result = user.profileImageUrl
-        ? await this.blobService.updateFile(
-            user.profileImageUrl,
-            file.originalname,
-            file.buffer,
-            'public',
-            user.id,
-          )
-        : await this.blobService.uploadFile(
-            file.originalname,
-            file.buffer,
-            'public',
-            user.id,
-          );
+      try {
+        const result = user.profileImageUrl
+          ? await this.blobService.updateFile(
+              user.profileImageUrl,
+              file.originalname,
+              file.buffer,
+              'public',
+              user.id,
+            )
+          : await this.blobService.uploadFile(
+              file.originalname,
+              file.buffer,
+              'public',
+              user.id,
+            );
 
-      if (result) {
-        user.profileImageUrl = result.url;
+        if (result) {
+          user.profileImageUrl = result.url;
+        }
+      } catch (error) {
+        console.error('Error uploading file.', error);
       }
     }
 

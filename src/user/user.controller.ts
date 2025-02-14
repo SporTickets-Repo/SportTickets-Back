@@ -38,8 +38,6 @@ export class UserController {
     return req.user;
   }
 
-  @Patch('update')
-  @UseInterceptors(FileInterceptor('imageFile'))
   @ApiOperation({ summary: 'Update user information' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -71,6 +69,8 @@ export class UserController {
     },
   })
   @ApiOkResponse({ description: 'User successfully updated.' })
+  @UseInterceptors(FileInterceptor('imageFile'))
+  @Patch('update')
   updateUser(
     @Request() req: { user: User },
     @Body() body: UpdateUserDto,
