@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -7,6 +7,8 @@ import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly userRepository: UserRepository,
     private readonly blobService: BlobService,
@@ -71,7 +73,7 @@ export class UserService {
           user.profileImageUrl = result.url;
         }
       } catch (error) {
-        console.error('Error uploading file.', error);
+        this.logger.error('Error uploading file.', error);
       }
     }
 

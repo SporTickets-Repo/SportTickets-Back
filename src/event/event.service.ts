@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { BlobService } from 'src/blob/blob.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -6,6 +6,8 @@ import { EventRepository } from './event.repository';
 
 @Injectable()
 export class EventService {
+  private readonly logger = new Logger(EventService.name);
+
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly blobService: BlobService,
@@ -32,7 +34,7 @@ export class EventService {
           bannerUrl = result.url;
         }
       } catch (error) {
-        console.error('Error uploading event file', error);
+        this.logger.error('Error uploading event file', error);
         bannerUrl = null;
       }
     }
@@ -88,7 +90,7 @@ export class EventService {
           bannerUrl = result.url;
         }
       } catch (error) {
-        console.error('Error uploading event file', error);
+        this.logger.error('Error uploading event file', error);
       }
     }
 
