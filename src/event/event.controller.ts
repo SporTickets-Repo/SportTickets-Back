@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Param,
   Post,
   Put,
@@ -136,5 +137,18 @@ export class EventController {
     }
 
     return this.eventService.update(id, updateEventDto, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN, Role.PARTNER)
+  @Get('my-events')
+  async getMyEvents(@Request() req: { user: User }) {
+    return this.eventService.getUserEvents(req.user.id);
+  }
+
+  @Roles(Role.ADMIN, Role.PARTNER)
+  @Get(':id')
+  async getEvent(@Param('id') id: string) {
+    return this.eventService.getOne(id);
   }
 }

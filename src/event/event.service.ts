@@ -121,7 +121,7 @@ export class EventService {
     return { message: 'Event deleted successfully' };
   }
 
-  async getById(id: string) {
+  async getOne(id: string) {
     const event = await this.eventRepository.findEventById(id);
     if (!event) {
       throw new NotFoundException('Event not found');
