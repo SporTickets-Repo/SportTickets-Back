@@ -8,4 +8,8 @@ export class AppConfigService {
   get blobToken(): string {
     return this.configService.get<string>('BLOB_READ_WRITE_TOKEN') || '';
   }
+
+  get zeptoMailToken(): string {
+    return this.configService.get<string>('ZEPTOMAIL_TOKEN') || '';
+  }
 }
