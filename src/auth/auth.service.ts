@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -62,29 +66,18 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
-    const existingByEmail = await this.authRepository.findUserByEmail(
-      registerDto.email,
-    );
-    if (existingByEmail) {
-      throw new ConflictException('Email already exists');
-    }
+    const [existingByEmail, existingByDocument, existingByPhone] =
+      await Promise.all([
+        this.authRepository.findUserByEmail(registerDto.email),
+        this.authRepository.findUserByDocument(registerDto.document),
+        registerDto.phone
+          ? this.authRepository.findUserByPhone(registerDto.phone)
+          : Promise.resolve(null),
+      ]);
 
-    const existingByDocument = await this.authRepository.findUserByDocument(
-      registerDto.document,
-    );
-
-    if (existingByDocument) {
-      throw new ConflictException('CPF already exists');
-    }
-
-    if (registerDto.phone) {
-      const existingByPhone = await this.authRepository.findUserByPhone(
-        registerDto.phone,
-      );
-      if (existingByPhone) {
-        throw new ConflictException('Phone already exists');
-      }
-    }
+    if (existingByEmail) throw new ConflictException('Email already exists');
+    if (existingByDocument) throw new ConflictException('CPF already exists');
+    if (existingByPhone) throw new ConflictException('Phone already exists');
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
@@ -95,6 +88,10 @@ export class AuthService {
       password: hashedPassword,
       bornAt: new Date(userData.bornAt),
     });
+
+    if (!newUser) {
+      throw new InternalServerErrorException('Error creating user');
+    }
 
     const { password: _, ...result } = newUser;
     return result;
