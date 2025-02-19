@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
+import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
 
@@ -89,5 +95,13 @@ export class UserService {
 
     const { password, ...result } = updatedUser;
     return result;
+  }
+
+  async updateUserRole(userId: string, updateRoleDto: UpdateRoleDto) {
+    const user = await this.userRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.userRepository.updateUserRole(userId, updateRoleDto.role);
   }
 }

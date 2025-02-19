@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Request,
   UploadedFile,
@@ -17,9 +18,11 @@ import {
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import { Sex, User } from '@prisma/client';
+import { Role, Sex, User } from '@prisma/client';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
 
@@ -27,7 +30,7 @@ import { UserService } from './user.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get('me')
   @ApiOperation({ summary: 'Get authenticated user data' })
@@ -83,5 +86,13 @@ export class UserController {
     return this.userService.updateUser(req.user, body, file);
   }
 
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Patch('update-role/:id')
+  async updateUserRole(
+    @Param('id') userId: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+  ) {
+    return this.userService.updateUserRole(userId, updateRoleDto);
+  }
 }
