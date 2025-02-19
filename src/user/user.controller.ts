@@ -95,4 +95,11 @@ export class UserController {
   ) {
     return this.userService.updateUserRole(userId, updateRoleDto);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('users')
+  async getUsers() {
+    return this.userService.getUsers();
+  }
 }

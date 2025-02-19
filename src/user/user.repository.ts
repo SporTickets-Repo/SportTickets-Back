@@ -60,4 +60,8 @@ export class UserRepository {
       data: { role },
     });
   }
+
+  async getUsers(): Promise<User[]> {
+    return this.prisma.user.findMany();
+  }
 }

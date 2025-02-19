@@ -104,4 +104,8 @@ export class UserService {
     }
     return this.userRepository.updateUserRole(userId, updateRoleDto.role);
   }
+
+  async getUsers() {
+    return this.userRepository.getUsers();
+  }
 }
