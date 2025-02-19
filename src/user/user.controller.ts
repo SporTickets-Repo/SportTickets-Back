@@ -27,7 +27,7 @@ import { UserService } from './user.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('me')
   @ApiOperation({ summary: 'Get authenticated user data' })
@@ -82,4 +82,6 @@ export class UserController {
 
     return this.userService.updateUser(req.user, body, file);
   }
+
+
 }
