@@ -9,18 +9,12 @@ import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
-
     AuthModule,
-
     BlobModule,
-
     EventModule,
-
     UserModule,
     TicketTypeModule,
-
     BlobModule,
-    ,
     BracketModule,
   ],
   controllers: [],
