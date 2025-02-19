@@ -6,7 +6,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @ApiProperty({ example: 'Lucas Rosa', description: 'User full name.' })
-  readonly name?: string;
+  name?: string;
 
   @IsOptional()
   @IsString()
@@ -14,12 +14,12 @@ export class UpdateUserDto {
     example: '0584303139',
     description: 'User document (e.g., CPF).',
   })
-  readonly document?: string;
+  document?: string;
 
   @IsOptional()
   @IsEmail()
   @ApiProperty({ example: 'lucass@gmail.com', description: 'User email.' })
-  readonly email?: string;
+  email?: string;
 
   @IsOptional()
   @ApiProperty({ example: '1990-01-01', description: 'User date of birth.' })
@@ -28,7 +28,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @ApiProperty({ example: '12345-678', description: 'User postal code (CEP).' })
-  readonly cep?: string;
+  cep?: string;
 
   @IsOptional()
   @IsEnum(Sex)
@@ -36,10 +36,10 @@ export class UpdateUserDto {
     example: 'MALE',
     description: 'User gender (MALE ou FEMALE).',
   })
-  readonly sex?: Sex;
+  sex?: Sex;
 
   @IsOptional()
   @IsString()
   @ApiProperty({ example: '61995585555', description: 'User phone number.' })
-  readonly phone?: string;
+  phone?: string;
 }
