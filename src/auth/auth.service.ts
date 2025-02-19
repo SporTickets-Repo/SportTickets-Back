@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { RedisService } from 'src/redis/redis.service';
 import { isValidCPF, isValidPhone } from 'src/utils/validators';
+import { v4 as uuidv4 } from 'uuid';
 import { AuthRepository } from './auth.repository';
 import { RegisterDto } from './dto/register.dto';
 
@@ -18,9 +22,13 @@ interface JwtPayload {
 
 @Injectable()
 export class AuthService {
+  private readonly RESET_PASSWORD_PREFIX = 'reset-password:';
+  private readonly RESET_PASSWORD_TTL = 900; // 15 minutos em segundos
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly authRepository: AuthRepository,
+    private readonly redisService: RedisService,
   ) {}
 
   async validateUserByIdentifier(
@@ -95,5 +103,62 @@ export class AuthService {
 
     const { password: _, ...result } = newUser;
     return result;
+  }
+
+  async forgotPassword(
+    email: string,
+  ): Promise<{ message: string; token: string }> {
+    const user = await this.authRepository.findUserByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const tokenKey = `${this.RESET_PASSWORD_PREFIX}${user.id}`;
+
+    let token = await this.redisService.get<string>(tokenKey);
+
+    if (!token) {
+      token = uuidv4();
+      await this.redisService.set(tokenKey, token, this.RESET_PASSWORD_TTL);
+    }
+
+    return { message: 'Reset password token sent', token };
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const keys = await this.redisService.getKeys(
+      `${this.RESET_PASSWORD_PREFIX}*`,
+    );
+
+    let userId: string | null = null;
+
+    for (const key of keys) {
+      const storedToken = await this.redisService.get<string>(key);
+      if (storedToken === token) {
+        userId = key.replace(this.RESET_PASSWORD_PREFIX, '');
+        break;
+      }
+    }
+
+    if (!userId) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const user = await this.authRepository.findUserById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.authRepository.updateUserPassword(user.id, hashedPassword);
+
+    await this.redisService.del(`${this.RESET_PASSWORD_PREFIX}${user.id}`);
+
+    return { message: 'Password reset successful' };
   }
 }

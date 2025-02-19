@@ -33,4 +33,20 @@ export class AuthController {
     }
     return this.authService.login(user);
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('email is required');
+    }
+    return this.authService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    if (!body.token || !body.newPassword) {
+      throw new BadRequestException('Token and new password are required');
+    }
+    return this.authService.resetPassword(body.token, body.newPassword);
+  }
 }
