@@ -30,10 +30,6 @@ export class EventRepository {
     return this.prisma.event.findMany({
       skip,
       take,
-      include: {
-        ticketTypes: true,
-        coupons: true,
-      },
     });
   }
 
@@ -57,6 +53,12 @@ export class EventRepository {
   async deleteEvent(id: string): Promise<Event> {
     return this.prisma.event.delete({
       where: { id },
+    });
+  }
+
+  async findEventBySlug(slug: string): Promise<Event | null> {
+    return this.prisma.event.findUnique({
+      where: { slug },
     });
   }
 }

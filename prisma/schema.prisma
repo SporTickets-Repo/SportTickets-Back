@@ -229,6 +229,6 @@ enum UserType {
 }
 
 enum Mode {
-  INDIVUAL
+  SOLO
   DUO
 }

@@ -4,18 +4,26 @@ import { BlobModule } from './blob/blob.module';
 import { BracketModule } from './bracket/bracket.module';
 import { EventModule } from './event/event.module';
 import { PrismaService } from './prisma/prisma.service';
+import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
+
     AuthModule,
+
     BlobModule,
+
     EventModule,
+
     UserModule,
+    TicketTypeModule,
+
     BlobModule,
+    ,
     BracketModule,
   ],
   controllers: [],
   providers: [PrismaService],
 })
-export class AppModule {}
+export class AppModule { }
