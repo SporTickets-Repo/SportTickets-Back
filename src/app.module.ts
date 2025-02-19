@@ -5,6 +5,7 @@ import { EventModule } from './event/event.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     TicketTypeModule,
     BlobModule,
+    CategoryModule,
   ],
   controllers: [],
   providers: [PrismaService],
