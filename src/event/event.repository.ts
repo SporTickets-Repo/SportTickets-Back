@@ -22,6 +22,7 @@ export class EventRepository {
       include: {
         ticketTypes: true,
         coupons: true,
+        bracket: true,
       },
     });
   }
@@ -39,6 +40,7 @@ export class EventRepository {
       include: {
         ticketTypes: true,
         coupons: true,
+        bracket: true,
       },
     });
   }
