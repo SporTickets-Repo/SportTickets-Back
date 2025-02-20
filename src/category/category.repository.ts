@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Category } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Category } from '@prisma/client';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
@@ -46,13 +46,7 @@ export class CategoryRepository {
   ): Promise<Category | null> {
     return this.prisma.category.update({
       where: { id },
-      data: {
-        // Omit undefined fields
-        ...(data.ticketTypeId !== undefined && { ticketTypeId: data.ticketTypeId }),
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.quantity !== undefined && { quantity: data.quantity }),
-      },
+      data,
     });
   }
 
