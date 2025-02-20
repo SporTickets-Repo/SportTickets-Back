@@ -5,11 +5,11 @@ import {
   Get,
   Param,
   Patch,
-  Query,
   Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -20,10 +20,10 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { Role, Sex, User } from '@prisma/client';
-import { isEmail } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { CheckEmailDto } from './dto/check-email.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
@@ -103,16 +103,8 @@ export class UserController {
     return this.userService.getUsers();
   }
 
-  @Get('check-email')
-  async checkEmail(@Query('email') email: string) {
-    if (!email) {
-      throw new BadRequestException('Email is required');
-    }
-
-    if (!isEmail(email)) {
-      throw new BadRequestException('Invalid email');
-    }
-
-    return this.userService.checkEmail(email);
+  @Get('check-email/:email')
+  async checkEmail(@Param(ValidationPipe) queryParams: CheckEmailDto) {
+    return this.userService.checkEmail(queryParams.email);
   }
 }
