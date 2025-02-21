@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { BlobModule } from './blob/blob.module';
 import { BracketModule } from './bracket/bracket.module';
+import { CategoryModule } from './category/category.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { EventModule } from './event/event.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
-import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -18,8 +19,9 @@ import { CategoryModule } from './category/category.module';
     BlobModule,
     BracketModule,
     CategoryModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [PrismaService],
 })
-export class AppModule { }
+export class AppModule {}
