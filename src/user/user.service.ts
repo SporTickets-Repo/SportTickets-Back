@@ -106,6 +106,15 @@ export class UserService {
   }
 
   async getUsers() {
-    return this.userRepository.getUsers();
+    const users = await this.userRepository.getUsers();
+
+    const result = users.map(({ password, ...user }) => user);
+
+    return result;
+  }
+
+  async checkEmail(email: string) {
+    const user = await this.userRepository.findUserByEmail(email);
+    return !!user;
   }
 }
