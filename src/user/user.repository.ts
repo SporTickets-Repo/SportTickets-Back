@@ -64,8 +64,4 @@ export class UserRepository {
   async getUsers(): Promise<User[]> {
     return this.prisma.user.findMany();
   }
-
-  async findUserByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findFirst({ where: { email } });
-  }
 }

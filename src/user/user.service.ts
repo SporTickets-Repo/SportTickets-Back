@@ -112,9 +112,4 @@ export class UserService {
 
     return result;
   }
-
-  async checkEmail(email: string) {
-    const user = await this.userRepository.findUserByEmail(email);
-    return !!user;
-  }
 }

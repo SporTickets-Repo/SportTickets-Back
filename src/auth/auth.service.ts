@@ -161,4 +161,9 @@ export class AuthService {
 
     return { message: 'Password reset successful' };
   }
+
+  async checkEmail(email: string) {
+    const user = await this.authRepository.findUserByEmail(email);
+    return !!user;
+  }
 }

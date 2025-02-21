@@ -9,7 +9,6 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -23,7 +22,6 @@ import { Role, Sex, User } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { CheckEmailDto } from './dto/check-email.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
@@ -101,10 +99,5 @@ export class UserController {
   @Get('all')
   async getUsers() {
     return this.userService.getUsers();
-  }
-
-  @Get('check-email/:email')
-  async checkEmail(@Param(ValidationPipe) queryParams: CheckEmailDto) {
-    return this.userService.checkEmail(queryParams.email);
   }
 }

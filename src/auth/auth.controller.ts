@@ -2,10 +2,14 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
+  Param,
   Post,
   UnauthorizedException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { CheckEmailDto } from './dto/check-email.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -48,5 +52,10 @@ export class AuthController {
       throw new BadRequestException('Token and new password are required');
     }
     return this.authService.resetPassword(body.token, body.newPassword);
+  }
+
+  @Get('check-email/:email')
+  async checkEmail(@Param(ValidationPipe) queryParams: CheckEmailDto) {
+    return this.authService.checkEmail(queryParams.email);
   }
 }
