@@ -8,6 +8,7 @@ import { EventModule } from './event/event.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
+import { TicketLotModule } from './ticket-lot/ticket-lot.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     BracketModule,
     CategoryModule,
     DashboardModule,
+    TicketLotModule,
   ],
   controllers: [],
   providers: [PrismaService],
