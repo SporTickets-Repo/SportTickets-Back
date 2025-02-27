@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -31,20 +32,20 @@ export class PersonalizedFieldController {
   }
 
   @Get('by-ticket-type/:ticketTypeId')
-  findAllByTicketType(@Param() params: TicketTypeIdParamDto) {
+  findAllByTicketType(@Param(ValidationPipe) params: TicketTypeIdParamDto) {
     return this.service.findAllByTicketType(params.ticketTypeId);
   }
 
   @Put(':id')
   update(
-    @Param() params: PersonalizedFieldsIdParamDto,
+    @Param(ValidationPipe) params: PersonalizedFieldsIdParamDto,
     @Body() updateDto: UpdatePersonalizedFieldDto,
   ) {
     return this.service.update(params.id, updateDto);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  delete(@Param(ValidationPipe) params: PersonalizedFieldsIdParamDto) {
+    return this.service.delete(params.id);
   }
 }
