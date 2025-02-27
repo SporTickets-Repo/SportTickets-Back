@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:15
     container_name: postgres-sportickets-container
-    restart: always
+    restart: no
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
@@ -17,7 +17,7 @@ services:
   redis:
     image: redis:latest
     container_name: redis-sportickets-container
-    restart: always
+    restart: no
     ports:
       - '6379:6379'
     volumes:
