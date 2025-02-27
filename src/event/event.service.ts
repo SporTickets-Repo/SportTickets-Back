@@ -129,9 +129,15 @@ export class EventService {
     return event;
   }
 
-  async getAll(query: { skip?: number; take?: number }) {
-    const { skip = 0, take = 10 } = query;
-    return this.eventRepository.findAllEvents(Number(skip), Number(take));
+  async getAll(query: {
+    page: number;
+    limit: number;
+    filter?: string;
+    sort?: string;
+  }) {
+    const { page, limit, filter, sort } = query;
+    const skip = (page - 1) * limit;
+    return this.eventRepository.findAllEvents(skip, limit, filter, sort);
   }
 
   async getUserEvents(userId: string) {

@@ -6,10 +6,12 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -25,16 +27,17 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateEventDto } from './dto/create-event.dto';
+import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventService } from './event.service';
 
 @ApiBearerAuth()
 @ApiTags('events')
 @Controller('events')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Post()
   @UseInterceptors(FileInterceptor('imageFile'))
@@ -83,6 +86,7 @@ export class EventController {
     return this.eventService.create(createEventDto, req.user.id, file);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Put(':id')
   @UseInterceptors(FileInterceptor('imageFile'))
@@ -139,14 +143,19 @@ export class EventController {
     return this.eventService.update(id, updateEventDto, file);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Get('my-events')
   async getMyEvents(@Request() req: { user: User }) {
     return this.eventService.getUserEvents(req.user.id);
   }
 
-  @Roles(Role.ADMIN, Role.PARTNER)
+  @Get('all')
+  async getAllEvents(@Query(ValidationPipe) query: GetAllEventsDto) {
+    const { page, limit, filter, sort } = query;
+    return this.eventService.getAll({ page, limit, filter, sort });
+  }
+
   @Get(':id')
   async getEvent(@Param('id') id: string) {
     return this.eventService.getOne(id);

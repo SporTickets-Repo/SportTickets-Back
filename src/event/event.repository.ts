@@ -27,10 +27,17 @@ export class EventRepository {
     });
   }
 
-  async findAllEvents(skip: number, take: number): Promise<Event[]> {
+  async findAllEvents(
+    skip: number,
+    take: number,
+    filter?: string,
+    sort?: string,
+  ): Promise<Event[]> {
     return this.prisma.event.findMany({
       skip,
       take,
+      where: filter ? { name: { contains: filter, mode: 'insensitive' } } : {},
+      orderBy: sort ? { [sort]: 'asc' } : {},
     });
   }
 
