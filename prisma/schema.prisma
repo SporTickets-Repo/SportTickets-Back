@@ -171,7 +171,7 @@ model TicketLot {
   quantity     Int
   startDate    DateTime
   endDate      DateTime
-  isActive     Boolean
+  isActive     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

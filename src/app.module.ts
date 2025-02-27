@@ -9,6 +9,8 @@ import { PrismaService } from './prisma/prisma.service';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
 import { PersonalizedFieldsModule } from './personalized-fields/personalized-fields.module';
+import { TicketLotModule } from './ticket-lot/ticket-lot.module';
+
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { PersonalizedFieldsModule } from './personalized-fields/personalized-fie
     CategoryModule,
     DashboardModule,
     PersonalizedFieldsModule,
+    TicketLotModule,
   ],
   controllers: [],
   providers: [PrismaService],
