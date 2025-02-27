@@ -55,10 +55,14 @@ export class TicketLotService {
   }
 
   async delete(id: string) {
-    const deleted = await this.ticketLotRepository.deleteTicketLot(id);
-    if (!deleted) {
+    const ticketLotExist = await this.ticketLotRepository.findTicketLotById(id);
+
+    if (!ticketLotExist) {
       throw new NotFoundException(`TicketLot with id ${id} not found`);
     }
+
+    await this.ticketLotRepository.deleteTicketLot(id);
+
     return { message: 'TicketLot deleted successfully' };
   }
 }
