@@ -5,7 +5,7 @@ import { CreateBracketDto } from './dto/create-bracket.dto';
 
 @Injectable()
 export class BracketRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createBracket(data: CreateBracketDto[]): Promise<Bracket[]> {
     const brackets = data.map(async (bracket) => {
@@ -31,7 +31,10 @@ export class BracketRepository {
     });
   }
 
-  async updateBracket(id: string, data: Prisma.BracketUpdateInput): Promise<Bracket> {
+  async updateBracket(
+    id: string,
+    data: Prisma.BracketUpdateInput,
+  ): Promise<Bracket> {
     return this.prisma.bracket.update({
       where: { id },
       data,

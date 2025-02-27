@@ -3,10 +3,9 @@ import { UpdateBracketDto } from './dto/update-bracket.dto';
 import { BracketRepository } from './bracket.repository';
 import { CreateBracketDto } from './dto/create-bracket.dto';
 
-
 @Injectable()
 export class BracketService {
-  constructor(private readonly bracketRepository: BracketRepository) { }
+  constructor(private readonly bracketRepository: BracketRepository) {}
 
   async create(createBracketDto: CreateBracketDto[]) {
     return this.bracketRepository.createBracket(createBracketDto);

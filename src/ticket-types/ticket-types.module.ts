@@ -4,7 +4,6 @@ import { TicketTypeController } from './ticket-types.controller';
 import { TicketTypeRepository } from './ticket-types.repository';
 import { TicketTypeService } from './ticket-types.service';
 
-
 @Module({
   controllers: [TicketTypeController],
   providers: [TicketTypeService, TicketTypeRepository, PrismaService],

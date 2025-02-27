@@ -18,14 +18,12 @@ import { UpdateBracketDto } from './dto/update-bracket.dto';
 
 @Controller('brackets')
 export class BracketController {
-  constructor(private readonly bracketService: BracketService) { }
+  constructor(private readonly bracketService: BracketService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Post()
-  async createBracket(
-    @Body() createBracketDto: CreateBracketDto[],
-  ) {
+  async createBracket(@Body() createBracketDto: CreateBracketDto[]) {
     return this.bracketService.create(createBracketDto);
   }
 

@@ -3,7 +3,6 @@ import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
 import { TicketTypeRepository } from './ticket-types.repository';
 
-
 @Injectable()
 export class TicketTypeService {
   constructor(private readonly ticketTypeRepository: TicketTypeRepository) {}
@@ -31,7 +30,10 @@ export class TicketTypeService {
   }
 
   async update(id: string, updateDto: UpdateTicketTypeDto) {
-    const updated = await this.ticketTypeRepository.updateTicketType(id, updateDto);
+    const updated = await this.ticketTypeRepository.updateTicketType(
+      id,
+      updateDto,
+    );
     if (!updated) {
       throw new NotFoundException(`TicketType with id ${id} not found`);
     }

@@ -8,4 +8,4 @@ import { BracketRepository } from './bracket.repository';
   controllers: [BracketController],
   providers: [BracketService, BracketRepository, PrismaService],
 })
-export class BracketModule { }
+export class BracketModule {}

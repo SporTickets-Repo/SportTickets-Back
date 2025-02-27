@@ -6,7 +6,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class TicketTypeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createTicketType(data: Prisma.TicketTypeCreateInput): Promise<TicketType> {
+  async createTicketType(
+    data: Prisma.TicketTypeCreateInput,
+  ): Promise<TicketType> {
     return this.prisma.ticketType.create({ data });
   }
 
@@ -20,7 +22,6 @@ export class TicketTypeRepository {
     return this.prisma.ticketType.findMany({
       skip,
       take,
-
     });
   }
 
@@ -30,7 +31,10 @@ export class TicketTypeRepository {
     });
   }
 
-  async updateTicketType(id: string, data: Prisma.TicketTypeUpdateInput): Promise<TicketType> {
+  async updateTicketType(
+    id: string,
+    data: Prisma.TicketTypeUpdateInput,
+  ): Promise<TicketType> {
     return this.prisma.ticketType.update({
       where: { id },
       data,
