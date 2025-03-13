@@ -143,4 +143,12 @@ export class EventService {
   async getUserEvents(userId: string) {
     return this.eventRepository.findUserEvents(userId);
   }
+
+  async getEventBySlug(slug: string) {
+    const event = await this.eventRepository.findEventBySlug(slug);
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+    return event;
+  }
 }

@@ -28,6 +28,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateEventDto } from './dto/create-event.dto';
 import { GetAllEventsDto } from './dto/get-all-events.dto';
+import { GetEventByIdDto } from './dto/get-event-by-id.dto';
+import { GetEventBySlugDto } from './dto/get-event-by-slug.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventService } from './event.service';
 
@@ -156,8 +158,13 @@ export class EventController {
     return this.eventService.getAll({ page, limit, filter, sort });
   }
 
+  @Get('slug/:slug')
+  async getEventBySlug(@Param(ValidationPipe) payload: GetEventBySlugDto) {
+    return this.eventService.getEventBySlug(payload.slug);
+  }
+
   @Get(':id')
-  async getEvent(@Param('id') id: string) {
-    return this.eventService.getOne(id);
+  async getEvent(@Param(ValidationPipe) payload: GetEventByIdDto) {
+    return this.eventService.getOne(payload.id);
   }
 }
