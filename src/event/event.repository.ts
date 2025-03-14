@@ -68,6 +68,12 @@ export class EventRepository {
   async findEventBySlug(slug: string): Promise<Event | null> {
     return this.prisma.event.findUnique({
       where: { slug },
+      include: {
+        ticketTypes: {
+          include: { ticketLots: true },
+        },
+        bracket: true,
+      },
     });
   }
 }
