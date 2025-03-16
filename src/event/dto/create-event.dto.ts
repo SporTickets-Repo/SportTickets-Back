@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { EventType } from '@prisma/client';
 import {
   IsDateString,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -30,6 +32,17 @@ export class CreateEventDto {
     description: 'Google Maps location of the event',
   })
   place: string;
+
+  @IsString()
+  @Matches(/^\d{8}$/, {
+    message: 'CEP must be a valid format',
+  })
+  @IsNotEmpty()
+  @ApiProperty({
+    example: '72509000',
+    description: 'CEP of the event',
+  })
+  cep: string;
 
   @IsString()
   @IsNotEmpty()
@@ -80,4 +93,11 @@ export class CreateEventDto {
     description: 'End date of the event',
   })
   endDate: Date;
+
+  @IsNotEmpty()
+  @ApiProperty({
+    example: 'FUTVOLEI',
+    description: 'Type of the event',
+  })
+  type: EventType;
 }

@@ -104,6 +104,7 @@ export class EventController {
         name: { type: 'string', example: 'Novo nome do evento' },
         slug: { type: 'string', example: 'novo-event-name' },
         place: { type: 'string', example: 'Novo local do evento' },
+        cep: { type: 'string', example: '72509000' },
         title: { type: 'string', example: 'Novo título' },
         description: { type: 'string', example: 'Nova descrição...' },
         regulation: { type: 'string', example: 'Regras atualizadas...' },
