@@ -51,6 +51,7 @@ model Event {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
+  address AddressEvent? 
   user User @relation(fields: [createdBy], references: [id])
 
   ticketTypes TicketType[]
@@ -185,6 +186,25 @@ model EventDashboardAccess {
   eventId String @db.Uuid
 
   user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model AddressEvent {
+  id           String @id @default(uuid()) @db.Uuid
+  eventId      String @unique @db.Uuid
+  cep          String
+  logradouro   String?
+  complemento  String?
+  unidade      String?
+  bairro       String?
+  localidade   String?
+  uf           String?
+  estado       String?
+  regiao       String?
+  ibge         String?
+  gia          String?
+  ddd          String?
+  siafi        String?
   event Event @relation(fields: [eventId], references: [id])
 }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Event, Prisma } from '@prisma/client';
+import { AddressEvent, Event, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 
@@ -12,6 +12,14 @@ export class EventRepository {
       data: {
         ...data,
         createdBy: userId,
+      },
+    });
+  }
+
+  async createEventAddress(addressData: AddressEvent) {
+    return this.prisma.addressEvent.create({
+      data: {
+        ...addressData,
       },
     });
   }
@@ -73,6 +81,7 @@ export class EventRepository {
           include: { ticketLots: true },
         },
         bracket: true,
+        address: true,
       },
     });
   }
