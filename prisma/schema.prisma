@@ -39,6 +39,7 @@ model Event {
   createdBy      String      @db.Uuid
   slug           String      @unique
   status         EventStatus @default(DRAFT)
+  type           EventType   @default(FUTVOLEI)
   name           String
   place          String
   title          String
@@ -226,9 +227,21 @@ enum DocumentType {
 
 enum EventStatus {
   DRAFT
+  REGISTRATION
   PROGRESS
   CANCELLED
   FINISHED
+}
+
+enum EventType {
+  FUTVOLEI
+  BEACH_TENIS
+  ALTINHA
+  FUTEBOL
+  FUTEBOL_ARREIA
+  FUTSAL
+  VOLEI
+  GERAL
 }
 
 enum TransactionStatus {

@@ -1,0 +1,8 @@
+-- CreateEnum
+CREATE TYPE "EventType" AS ENUM ('FUTVOLEI', 'BEACH_TENIS', 'ALTINHA', 'FUTEBOL', 'FUTEBOL_ARREIA', 'FUTSAL', 'VOLEI', 'GERAL');
+
+-- AlterEnum
+ALTER TYPE "EventStatus" ADD VALUE 'REGISTRATION';
+
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN     "type" "EventType" NOT NULL DEFAULT 'FUTVOLEI';

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { EventType } from '@prisma/client';
 import {
   IsDateString,
   IsNotEmpty,
@@ -92,4 +93,11 @@ export class CreateEventDto {
     description: 'End date of the event',
   })
   endDate: Date;
+
+  @IsNotEmpty()
+  @ApiProperty({
+    example: 'FUTVOLEI',
+    description: 'Type of the event',
+  })
+  type: EventType;
 }
