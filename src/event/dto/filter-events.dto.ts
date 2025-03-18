@@ -1,7 +1,8 @@
 // src/events/dto/filter-events.dto.ts
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { EventType } from '@prisma/client';
+import { IsEnum, IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class FilterEventsDto {
   @ApiPropertyOptional({
@@ -29,4 +30,13 @@ export class FilterEventsDto {
   @IsOptional()
   @IsNumberString()
   maxPrice?: number;
+
+  @IsEnum(EventType)
+  @ApiPropertyOptional({
+    description: 'Tipo de evento',
+    example: EventType.FUTVOLEI,
+    enum: EventType,
+  })
+  @IsOptional()
+  type?: EventType;
 }

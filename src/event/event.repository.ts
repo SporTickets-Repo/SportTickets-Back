@@ -88,7 +88,7 @@ export class EventRepository {
   }
 
   async findFilteredEvents(filters: FilterEventsDto): Promise<Event[]> {
-    const { name, startDate, minPrice, maxPrice } = filters;
+    const { name, startDate, minPrice, maxPrice, type } = filters;
 
     // Construção do objeto "where"
     const where: Prisma.EventWhereInput = {};
@@ -129,6 +129,11 @@ export class EventRepository {
           },
         },
       };
+    }
+
+    // 4) Filtro por tipo de evento
+    if (type) {
+      where.type = type;
     }
 
     return this.prisma.event.findMany({
