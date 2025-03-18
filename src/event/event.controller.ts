@@ -27,6 +27,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateEventDto } from './dto/create-event.dto';
+import { FilterEventsDto } from './dto/filter-events.dto';
 import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { GetEventByIdDto } from './dto/get-event-by-id.dto';
 import { GetEventBySlugDto } from './dto/get-event-by-slug.dto';
@@ -157,6 +158,11 @@ export class EventController {
   async getAllEvents(@Query(ValidationPipe) query: GetAllEventsDto) {
     const { page, limit, filter, sort } = query;
     return this.eventService.getAll({ page, limit, filter, sort });
+  }
+
+  @Get('filter')
+  async getFilteredEvents(@Query(ValidationPipe) filters: FilterEventsDto) {
+    return this.eventService.getFilteredEvents(filters);
   }
 
   @Get('slug/:slug')

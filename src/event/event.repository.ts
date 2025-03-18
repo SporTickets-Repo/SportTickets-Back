@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AddressEvent, Event, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { FilterEventsDto } from './dto/filter-events.dto';
 
 @Injectable()
 export class EventRepository {
@@ -82,6 +83,66 @@ export class EventRepository {
         },
         bracket: true,
         address: true,
+      },
+    });
+  }
+
+  async findFilteredEvents(filters: FilterEventsDto): Promise<Event[]> {
+    const { name, startDate, minPrice, maxPrice } = filters;
+
+    // Construção do objeto "where"
+    const where: Prisma.EventWhereInput = {};
+
+    // 1) Filtro por título (pesquisa parcial "contains", case insensitive)
+    if (name) {
+      where.name = {
+        contains: name,
+        mode: 'insensitive',
+      };
+    }
+
+    // 2) Filtro de data (startDate)
+    if (startDate) {
+      const startOfDay = new Date(startDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(startDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      where.startDate = {
+        gte: startOfDay,
+        lte: endOfDay,
+      };
+    }
+
+    // 3) Filtro por faixa de preço (ticketTypes -> ticketLots)
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.ticketTypes = {
+        some: {
+          ticketLots: {
+            some: {
+              price: {
+                gte: minPrice ?? 0,
+                lte: maxPrice ?? Number.MAX_SAFE_INTEGER,
+              },
+            },
+          },
+        },
+      };
+    }
+
+    return this.prisma.event.findMany({
+      where,
+      include: {
+        ticketTypes: {
+          include: {
+            ticketLots: true,
+          },
+        },
+        user: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
