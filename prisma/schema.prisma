@@ -135,7 +135,7 @@ model TicketType {
   description String
   restriction Restriction @default(SAME_CATEGORY)
   userType    UserType    @default(ATHLETE)
-  mode        Mode        @default(DUO)
+  teamSize    Int         @default(1)
 
   event Event @relation(fields: [eventId], references: [id])
 
@@ -259,9 +259,4 @@ enum Restriction {
 enum UserType {
   ATHLETE
   VIEWER
-}
-
-enum Mode {
-  SOLO
-  DUO
 }

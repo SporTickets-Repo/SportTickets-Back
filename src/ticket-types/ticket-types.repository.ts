@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, TicketType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 
 @Injectable()
 export class TicketTypeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createTicketType(
-    data: Prisma.TicketTypeCreateInput,
-  ): Promise<TicketType> {
+  async createTicketType(data: CreateTicketTypeDto): Promise<TicketType> {
     return this.prisma.ticketType.create({ data });
   }
 

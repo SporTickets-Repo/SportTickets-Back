@@ -7,7 +7,7 @@ import { TicketTypeRepository } from './ticket-types.repository';
 export class TicketTypeService {
   constructor(private readonly ticketTypeRepository: TicketTypeRepository) {}
 
-  async create(createDto) {
+  async create(createDto: CreateTicketTypeDto) {
     return this.ticketTypeRepository.createTicketType(createDto);
   }
 
