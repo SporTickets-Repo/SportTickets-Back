@@ -21,7 +21,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Role, User } from '@prisma/client';
+import { EventType, Role, User } from '@prisma/client';
 import { isUUID } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -163,6 +163,11 @@ export class EventController {
   @Get('filter')
   async getFilteredEvents(@Query(ValidationPipe) filters: FilterEventsDto) {
     return this.eventService.getFilteredEvents(filters);
+  }
+
+  @Get('types')
+  getEventTypes() {
+    return Object.values(EventType);
   }
 
   @Get('slug/:slug')
