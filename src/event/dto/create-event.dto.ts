@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { EventType } from '@prisma/client';
 import {
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -99,5 +100,6 @@ export class CreateEventDto {
     example: 'FUTVOLEI',
     description: 'Type of the event',
   })
+  @IsEnum(EventType)
   type: EventType;
 }
