@@ -4,6 +4,7 @@ import { AddressEvent } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { BlobService } from 'src/blob/blob.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventRepository } from './event.repository';
 
@@ -187,5 +188,9 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
     return event;
+  }
+
+  async getFilteredEvents(filters: FilterEventsDto) {
+    return this.eventRepository.findFilteredEvents(filters);
   }
 }

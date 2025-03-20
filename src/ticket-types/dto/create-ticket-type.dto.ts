@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Mode, Restriction, UserType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Restriction, UserType } from '@prisma/client';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateTicketTypeDto {
   @IsNotEmpty()
@@ -13,10 +19,10 @@ export class CreateTicketTypeDto {
   @ApiProperty({ example: 'Ticket Type Name' })
   name: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   @ApiProperty({ example: 'Ticket Type Description' })
-  description?: string;
+  description: string;
 
   @IsOptional()
   @IsEnum(Restriction)
@@ -28,8 +34,8 @@ export class CreateTicketTypeDto {
   @ApiProperty({ example: 'VIEWER' })
   userType?: UserType;
 
-  @IsOptional()
-  @IsEnum(Mode)
-  @ApiProperty({ example: 'SOLO' })
-  mode?: Mode;
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({ example: 2 })
+  teamSize: number;
 }
