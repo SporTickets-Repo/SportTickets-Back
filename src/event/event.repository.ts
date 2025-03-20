@@ -78,7 +78,11 @@ export class EventRepository {
       where: { slug },
       include: {
         ticketTypes: {
-          include: { ticketLots: true },
+          include: {
+            ticketLots: true,
+            categories: true,
+            personalizedFields: true,
+          },
         },
         bracket: true,
         address: true,

@@ -2,11 +2,13 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
@@ -111,5 +113,55 @@ export class UserService {
     const result = users.map(({ password, ...user }) => user);
 
     return result;
+  }
+
+  async getUserByEmail(email: string) {
+    const user = await this.userRepository.findUserByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const { id, email: userEmail, phone, name, profileImageUrl, sex } = user;
+    return { userId: id, email: userEmail, phone, name, profileImageUrl, sex };
+  }
+
+  async registerUser(registerUserDto: RegisterUserDto) {
+    const [existingByEmail, existingByDocument, existingByPhone] =
+      await Promise.all([
+        this.userRepository.findUserByEmailRegister(registerUserDto.email),
+        this.userRepository.findUserByDocument(registerUserDto.document),
+        registerUserDto.phone
+          ? this.userRepository.findUserByPhone(registerUserDto.phone)
+          : Promise.resolve(null),
+      ]);
+
+    if (existingByEmail) throw new ConflictException('Email already exists');
+    if (existingByDocument) throw new ConflictException('CPF already exists');
+    if (existingByPhone) throw new ConflictException('Phone already exists');
+
+    const newUser = await this.userRepository.createUser({
+      ...registerUserDto,
+      bornAt: new Date(registerUserDto.bornAt),
+      phone: registerUserDto.phone ?? null,
+      documentType: 'CPF',
+      password: '',
+      role: 'USER',
+      profileImageUrl: null,
+      siteUrl: null,
+      logoUrl: null,
+      fantasyName: null,
+    });
+
+    if (!newUser) {
+      throw new InternalServerErrorException('Error creating user');
+    }
+
+    return {
+      userId: newUser.id,
+      email: newUser.email,
+      phone: newUser.phone,
+      name: newUser.name,
+      profileImageUrl: newUser.profileImageUrl,
+      sex: newUser.sex,
+    };
   }
 }
