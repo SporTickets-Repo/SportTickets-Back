@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CheckEmailDto } from './dto/check-email.dto';
+import { CheckResetTokenDto } from './dto/check-reset-token.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -52,6 +53,13 @@ export class AuthController {
       throw new BadRequestException('Token and new password are required');
     }
     return this.authService.resetPassword(body.token, body.newPassword);
+  }
+
+  @Get('check-reset-password-token/:token')
+  async checkResetPasswordToken(
+    @Param(ValidationPipe) payload: CheckResetTokenDto,
+  ) {
+    return this.authService.checkResetPasswordToken(payload.token);
   }
 
   @Get('check-email/:email')

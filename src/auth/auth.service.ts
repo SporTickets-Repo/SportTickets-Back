@@ -9,6 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { EmailService } from 'src/email/email.service';
 import { RedisService } from 'src/redis/redis.service';
 import { isValidCPF, isValidPhone } from 'src/utils/validators';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly authRepository: AuthRepository,
     private readonly redisService: RedisService,
+    private readonly emailService: EmailService,
   ) {}
 
   async validateUserByIdentifier(
@@ -123,6 +125,12 @@ export class AuthService {
       await this.redisService.set(tokenKey, token, this.RESET_PASSWORD_TTL);
     }
 
+    await this.emailService.sendPasswordResetEmail(
+      user.email,
+      user.name,
+      token,
+    );
+
     return { message: 'Reset password token sent', token };
   }
 
@@ -160,6 +168,24 @@ export class AuthService {
     await this.redisService.del(`${this.RESET_PASSWORD_PREFIX}${user.id}`);
 
     return { message: 'Password reset successful' };
+  }
+
+  async checkResetPasswordToken(token: string) {
+    const keys = await this.redisService.getKeys(
+      `${this.RESET_PASSWORD_PREFIX}*`,
+    );
+
+    let userId: string | null = null;
+
+    for (const key of keys) {
+      const storedToken = await this.redisService.get<string>(key);
+      if (storedToken === token) {
+        userId = key.replace(this.RESET_PASSWORD_PREFIX, '');
+        break;
+      }
+    }
+
+    return !!userId;
   }
 
   async checkEmail(email: string) {

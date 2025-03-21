@@ -28,4 +28,8 @@ export class AppConfigService {
   get zeptoMailToken(): string {
     return this.configService.get<string>('ZEPTOMAIL_TOKEN') || '';
   }
+
+  get frontendUrl(): string {
+    return this.configService.get<string>('FRONTEND_URL') || '';
+  }
 }
