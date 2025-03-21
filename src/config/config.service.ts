@@ -9,6 +9,10 @@ export class AppConfigService {
     return this.configService.get<string>('BLOB_READ_WRITE_TOKEN') || '';
   }
 
+  get redisUrl(): string {
+    return this.configService.get<string>('REDIS_URL') || '';
+  }
+
   get redisHost(): string {
     return this.configService.get<string>('REDIS_HOST', 'localhost');
   }
