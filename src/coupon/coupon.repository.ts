@@ -45,4 +45,13 @@ export class CouponRepository {
   async findUserById(userId: string) {
     return this.prisma.user.findUnique({ where: { id: userId } });
   }
+
+  async findAllByEvent(eventId: string) {
+    return this.prisma.coupon.findMany({
+      where: {
+        eventId,
+        deletedAt: null,
+      },
+    });
+  }
 }

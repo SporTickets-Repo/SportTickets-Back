@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Patch,
   Post,
@@ -37,5 +38,10 @@ export class CouponController {
   @Post('use')
   useCoupon(@Body() body: UseCouponDto) {
     return this.couponService.validateCoupon(body);
+  }
+
+  @Get('event/:eventId')
+  getCouponsByEvent(@Param('eventId') eventId: string) {
+    return this.couponService.getCouponsByEvent(eventId);
   }
 }

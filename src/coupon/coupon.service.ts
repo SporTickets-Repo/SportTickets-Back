@@ -54,4 +54,8 @@ export class CouponService {
       percentage: coupon.percentage,
     };
   }
+
+  async getCouponsByEvent(eventId: string) {
+    return this.couponRepository.findAllByEvent(eventId);
+  }
 }
