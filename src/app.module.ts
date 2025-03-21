@@ -10,6 +10,9 @@ import { PrismaService } from './prisma/prisma.service';
 import { TicketLotModule } from './ticket-lot/ticket-lot.module';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
+import { NestController } from './coupon/nest/nest.controller';
+import { CouponService } from './coupon/coupon.service';
+import { CouponModule } from './coupon/coupon.module';
 
 @Module({
   imports: [
@@ -24,8 +27,9 @@ import { UserModule } from './user/user.module';
     DashboardModule,
     PersonalizedFieldsModule,
     TicketLotModule,
+    CouponModule,
   ],
-  controllers: [],
-  providers: [PrismaService],
+  controllers: [NestController],
+  providers: [PrismaService, CouponService],
 })
 export class AppModule {}
