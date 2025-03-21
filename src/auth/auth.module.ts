@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { AppConfigModule } from 'src/config/config.module';
+import { EmailService } from 'src/email/email.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisModule } from 'src/redis/redis.module';
 import { AuthController } from './auth.controller';
@@ -16,8 +18,15 @@ import { JwtStrategy } from './jwt.strategy';
       signOptions: { expiresIn: '1h' },
     }),
     RedisModule,
+    AppConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy, PrismaService],
+  providers: [
+    AuthService,
+    AuthRepository,
+    JwtStrategy,
+    PrismaService,
+    EmailService,
+  ],
 })
 export class AuthModule {}
