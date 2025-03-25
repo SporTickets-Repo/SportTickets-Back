@@ -9,11 +9,15 @@ import {
   Query,
   Request,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -22,11 +26,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { EventType, Role, User } from '@prisma/client';
-import { isUUID } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { isUUID, validate } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateEventDto } from './dto/create-event.dto';
+import { CreateFullEventDto } from './dto/create-full-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { GetEventByIdDto } from './dto/get-event-by-id.dto';
@@ -87,6 +93,66 @@ export class EventController {
     }
 
     return this.eventService.create(createEventDto, req.user.id, file);
+  }
+
+  @Post('full-event')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'bannerImageFile', maxCount: 1 },
+      { name: 'smallImageFile', maxCount: 1 },
+    ]),
+  )
+  async createFullEvent(
+    @Body() body: any,
+    @UploadedFiles()
+    files: {
+      bannerImageFile?: Express.Multer.File[];
+      smallImageFile?: Express.Multer.File[];
+    },
+  ) {
+    if (typeof body.event === 'string') {
+      body.event = JSON.parse(body.event);
+    }
+    if (typeof body.ticketTypes === 'string') {
+      body.ticketTypes = JSON.parse(body.ticketTypes);
+    }
+    if (typeof body.coupons === 'string') {
+      body.coupons = JSON.parse(body.coupons);
+    }
+    if (typeof body.collaborators === 'string') {
+      body.collaborators = JSON.parse(body.collaborators);
+    }
+
+    const dtoInstance = plainToInstance(CreateFullEventDto, body);
+
+    const errors = await validate(dtoInstance, {
+      // Se quiser que ele pare no primeiro erro, ative 'stopAtFirstError'.
+      // stopAtFirstError: true,
+      // Se quiser mostrar todos os erros em formato de array, mantenha false
+      // skipMissingProperties: false, // depende do seu caso
+    });
+
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
+
+    if (!files.bannerImageFile?.length) {
+      throw new BadRequestException(
+        'O arquivo da imagem do banner é obrigatório',
+      );
+    }
+    if (!files.smallImageFile?.length) {
+      throw new BadRequestException(
+        'O arquivo da imagem pequena é obrigatório',
+      );
+    }
+
+    dtoInstance.event.bannerImageFile = files.bannerImageFile[0];
+    dtoInstance.event.smallImageFile = files.smallImageFile[0];
+
+    console.log('Evento recebido e validado:', dtoInstance);
+
+    return { message: 'Evento criado com sucesso' };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
