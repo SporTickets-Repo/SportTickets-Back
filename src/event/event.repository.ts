@@ -32,6 +32,8 @@ export class EventRepository {
         ticketTypes: true,
         coupons: true,
         bracket: true,
+        address: true,
+        eventDashboardAccess: true,
       },
     });
   }
@@ -152,6 +154,47 @@ export class EventRepository {
       },
       orderBy: {
         createdAt: 'desc',
+      },
+    });
+  }
+
+  async findEmptyEventByUser(userId: string): Promise<Event | null> {
+    return this.prisma.event.findFirst({
+      where: {
+        createdBy: userId,
+        slug: null,
+        name: null,
+        place: null,
+        description: null,
+        startDate: null,
+        endDate: null,
+        regulation: null,
+        additionalInfo: null,
+        address: null,
+        smallImageUrl: null,
+        bannerUrl: null,
+        coupons: { none: {} },
+        bracket: { none: {} },
+        ticketTypes: { none: {} },
+        eventDashboardAccess: { none: {} },
+      },
+    });
+  }
+
+  async createEmptyEvent(userId: string): Promise<Event> {
+    return this.prisma.event.create({
+      data: {
+        createdBy: userId,
+        slug: null,
+        name: null,
+        place: null,
+        description: null,
+        regulation: null,
+        additionalInfo: null,
+        bannerUrl: null,
+        smallImageUrl: null,
+        startDate: null,
+        endDate: null,
       },
     });
   }

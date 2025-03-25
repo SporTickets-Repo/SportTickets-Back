@@ -1,4 +1,3 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { BlobService } from 'src/blob/blob.service';
 import { AppConfigModule } from 'src/config/config.module';
@@ -8,7 +7,7 @@ import { EventRepository } from './event.repository';
 import { EventService } from './event.service';
 
 @Module({
-  imports: [AppConfigModule, HttpModule],
+  imports: [AppConfigModule],
   controllers: [EventController],
   providers: [EventService, EventRepository, PrismaService, BlobService],
 })
