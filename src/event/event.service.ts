@@ -101,7 +101,6 @@ export class EventService {
 
     const { address, ...rest } = updateEventDto;
 
-    // Garante que paymentMethods seja sempre um array
     const paymentMethods =
       updateEventDto.paymentMethods &&
       !Array.isArray(updateEventDto.paymentMethods)
@@ -112,7 +111,7 @@ export class EventService {
       ...rest,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
-      paymentMethods, // agora sempre um array ou undefined
+      paymentMethods: paymentMethods ?? [],
       bannerUrl,
       smallImageUrl,
       ...(address
