@@ -1,6 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
-import { CreateEventDto } from './dto/create-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventRepository } from './event.repository';
@@ -14,59 +19,22 @@ export class EventService {
     private readonly blobService: BlobService,
   ) {}
 
-  async create(
-    createEventDto: CreateEventDto,
-    userId: string,
-    file?: Express.Multer.File,
-  ) {
-    const startDate = new Date(createEventDto.startDate);
-    const endDate = new Date(createEventDto.endDate);
-    let bannerUrl: string | null = null;
-
-    const existingSlug = await this.eventRepository.findEventBySlug(
-      createEventDto.slug,
-    );
-
-    if (existingSlug) throw new NotFoundException('Slug already exists');
-
-    if (file) {
-      try {
-        const result = await this.blobService.uploadFile(
-          file.originalname,
-          file.buffer,
-          'public',
-          userId,
-        );
-        if (result) {
-          bannerUrl = result.url;
-        }
-      } catch (error) {
-        this.logger.error('Error uploading event file', error);
-        bannerUrl = null;
-      }
-    }
-
-    const createdEvent = await this.eventRepository.createEvent(
-      {
-        ...createEventDto,
-        startDate,
-        endDate,
-        bannerUrl,
-      },
-      userId,
-    );
-
-    return createdEvent;
-  }
-
   async update(
     id: string,
     updateEventDto: UpdateEventDto,
-    file?: Express.Multer.File,
+    files?: { banner?: Express.Multer.File[]; small?: Express.Multer.File[] },
   ) {
     const existingEvent = await this.eventRepository.findEventById(id);
     if (!existingEvent) {
       throw new NotFoundException('Event not found');
+    }
+
+    const existingSlug = await this.eventRepository.findEventBySlug(
+      updateEventDto.slug,
+    );
+
+    if (existingSlug && existingSlug.id !== id) {
+      throw new ConflictException('Slug already in use by another event');
     }
 
     const startDate = updateEventDto.startDate
@@ -77,39 +45,97 @@ export class EventService {
       : undefined;
 
     let bannerUrl = existingEvent.bannerUrl;
+    let smallImageUrl = existingEvent.smallImageUrl;
 
-    if (file) {
-      try {
-        const result = bannerUrl
-          ? await this.blobService.updateFile(
-              bannerUrl,
-              file.originalname,
-              file.buffer,
-              'public',
-              existingEvent.id,
-            )
-          : await this.blobService.uploadFile(
-              file.originalname,
-              file.buffer,
-              'public',
-              existingEvent.id,
-            );
-
-        if (result) {
-          bannerUrl = result.url;
+    if (files) {
+      if (files.banner && files.banner.length > 0) {
+        const bannerFile = files.banner[0];
+        try {
+          const result = bannerUrl
+            ? await this.blobService.updateFile(
+                bannerUrl,
+                bannerFile.originalname,
+                bannerFile.buffer,
+                'public',
+                existingEvent.id,
+              )
+            : await this.blobService.uploadFile(
+                bannerFile.originalname,
+                bannerFile.buffer,
+                'public',
+                existingEvent.id,
+              );
+          if (result) {
+            bannerUrl = result.url;
+          }
+        } catch (error) {
+          this.logger.error(`Error uploading event file for banner`, error);
         }
-      } catch (error) {
-        this.logger.error('Error uploading event file', error);
+      }
+
+      if (files.small && files.small.length > 0) {
+        const smallFile = files.small[0];
+        try {
+          const result = smallImageUrl
+            ? await this.blobService.updateFile(
+                smallImageUrl,
+                smallFile.originalname,
+                smallFile.buffer,
+                'public',
+                existingEvent.id,
+              )
+            : await this.blobService.uploadFile(
+                smallFile.originalname,
+                smallFile.buffer,
+                'public',
+                existingEvent.id,
+              );
+          if (result) {
+            smallImageUrl = result.url;
+          }
+        } catch (error) {
+          this.logger.error(`Error uploading event file for small`, error);
+        }
       }
     }
 
-    const updatedEvent = await this.eventRepository.updateEvent(id, {
-      ...updateEventDto,
+    const { address, ...rest } = updateEventDto;
+
+    // Garante que paymentMethods seja sempre um array
+    const paymentMethods =
+      updateEventDto.paymentMethods &&
+      !Array.isArray(updateEventDto.paymentMethods)
+        ? [updateEventDto.paymentMethods]
+        : updateEventDto.paymentMethods;
+
+    const data: Prisma.EventUpdateInput = {
+      ...rest,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
+      paymentMethods, // agora sempre um array ou undefined
       bannerUrl,
-    });
+      smallImageUrl,
+      ...(address
+        ? {
+            address: {
+              upsert: {
+                update: { ...address },
+                create: {
+                  zipCode: address.zipCode as string,
+                  street: address.street ?? '',
+                  complement: address.complement ?? '',
+                  number: address.number ?? '',
+                  neighborhood: address.neighborhood ?? '',
+                  city: address.city ?? '',
+                  state: address.state ?? '',
+                },
+              },
+            },
+          }
+        : {}),
+    };
 
+    const updatedEvent = await this.eventRepository.updateEvent(id, data);
     if (!updatedEvent) {
       throw new NotFoundException('Event not found');
     }

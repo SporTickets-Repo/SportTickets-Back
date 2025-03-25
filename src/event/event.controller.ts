@@ -8,31 +8,18 @@ import {
   Put,
   Query,
   Request,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from '@nestjs/platform-express';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
-import { EventType, Role, User } from '@prisma/client';
-import { plainToInstance } from 'class-transformer';
-import { isUUID, validate } from 'class-validator';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { EventLevel, EventType, Role, User } from '@prisma/client';
+import { isUUID } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { CreateEventDto } from './dto/create-event.dto';
-import { CreateFullEventDto } from './dto/create-full-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { GetEventByIdDto } from './dto/get-event-by-id.dto';
@@ -48,169 +35,40 @@ export class EventController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
-  @Post()
-  @UseInterceptors(FileInterceptor('imageFile'))
-  @ApiOperation({ summary: 'Cria um novo evento' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Dados para criação do evento + arquivo de banner (opcional)',
-    required: true,
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'Sportickets event' },
-        slug: { type: 'string', example: 'event-name' },
-        place: { type: 'string', example: 'Event place' },
-        title: { type: 'string', example: 'Volleyball event' },
-        description: { type: 'string', example: 'Event of the year' },
-        regulation: { type: 'string', example: 'Event regulation' },
-        additionalInfo: { type: 'string', example: 'Event additional info' },
-        startDate: {
-          type: 'string',
-          format: 'date-time',
-          example: '2025-12-01T10:00:00.000Z',
-        },
-        endDate: {
-          type: 'string',
-          format: 'date-time',
-          example: '2025-12-01T18:00:00.000Z',
-        },
-        imageFile: {
-          type: 'string',
-          format: 'binary',
-          description: 'Banner do evento (arquivo de imagem)',
-        },
-      },
-    },
-  })
-  async createEvent(
-    @Body() createEventDto: CreateEventDto,
-    @Request() req: { user: User },
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
-    if (file && !file.mimetype.startsWith('image')) {
-      throw new BadRequestException('Invalid image file');
-    }
-
-    return this.eventService.create(createEventDto, req.user.id, file);
-  }
-
-  @Post('full-event')
   @UseInterceptors(
     FileFieldsInterceptor([
-      { name: 'bannerImageFile', maxCount: 1 },
-      { name: 'smallImageFile', maxCount: 1 },
+      { name: 'banner', maxCount: 1 },
+      { name: 'small', maxCount: 1 },
     ]),
   )
-  async createFullEvent(
-    @Body() body: any,
-    @UploadedFiles()
-    files: {
-      bannerImageFile?: Express.Multer.File[];
-      smallImageFile?: Express.Multer.File[];
-    },
-  ) {
-    if (typeof body.event === 'string') {
-      body.event = JSON.parse(body.event);
-    }
-    if (typeof body.ticketTypes === 'string') {
-      body.ticketTypes = JSON.parse(body.ticketTypes);
-    }
-    if (typeof body.coupons === 'string') {
-      body.coupons = JSON.parse(body.coupons);
-    }
-    if (typeof body.collaborators === 'string') {
-      body.collaborators = JSON.parse(body.collaborators);
-    }
-
-    const dtoInstance = plainToInstance(CreateFullEventDto, body);
-
-    const errors = await validate(dtoInstance, {
-      // Se quiser que ele pare no primeiro erro, ative 'stopAtFirstError'.
-      // stopAtFirstError: true,
-      // Se quiser mostrar todos os erros em formato de array, mantenha false
-      // skipMissingProperties: false, // depende do seu caso
-    });
-
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
-    }
-
-    if (!files.bannerImageFile?.length) {
-      throw new BadRequestException(
-        'O arquivo da imagem do banner é obrigatório',
-      );
-    }
-    if (!files.smallImageFile?.length) {
-      throw new BadRequestException(
-        'O arquivo da imagem pequena é obrigatório',
-      );
-    }
-
-    dtoInstance.event.bannerImageFile = files.bannerImageFile[0];
-    dtoInstance.event.smallImageFile = files.smallImageFile[0];
-
-    console.log('Evento recebido e validado:', dtoInstance);
-
-    return { message: 'Evento criado com sucesso' };
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER)
-  @Put(':id')
-  @UseInterceptors(FileInterceptor('imageFile'))
-  @ApiOperation({ summary: 'Atualiza um evento existente' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description:
-      'Dados para atualização do evento + arquivo de banner (opcional)',
-    required: false,
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'Novo nome do evento' },
-        slug: { type: 'string', example: 'novo-event-name' },
-        place: { type: 'string', example: 'Novo local do evento' },
-        cep: { type: 'string', example: '72509000' },
-        title: { type: 'string', example: 'Novo título' },
-        description: { type: 'string', example: 'Nova descrição...' },
-        regulation: { type: 'string', example: 'Regras atualizadas...' },
-        additionalInfo: {
-          type: 'string',
-          example: 'Novas informações adicionais...',
-        },
-        startDate: {
-          type: 'string',
-          format: 'date-time',
-          example: '2025-12-02T10:00:00.000Z',
-        },
-        endDate: {
-          type: 'string',
-          format: 'date-time',
-          example: '2025-12-02T18:00:00.000Z',
-        },
-        imageFile: {
-          type: 'string',
-          format: 'binary',
-          description: 'Novo banner do evento (arquivo de imagem)',
-        },
-      },
-    },
-  })
+  @Put(':id')
   async updateEvent(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles()
+    files?: { banner?: Express.Multer.File[]; small?: Express.Multer.File[] },
   ) {
-    if (file && !file.mimetype.startsWith('image')) {
-      throw new BadRequestException('Invalid image file');
+    if (files) {
+      for (const field in files) {
+        const fileArray = files[field];
+        if (fileArray) {
+          for (const file of fileArray) {
+            if (file && !file.mimetype.startsWith('image')) {
+              throw new BadRequestException(
+                `Invalid image file for ${file.fieldname}`,
+              );
+            }
+          }
+        }
+      }
     }
 
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid event ID');
     }
 
-    return this.eventService.update(id, updateEventDto, file);
+    return this.eventService.update(id, updateEventDto, files);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -241,6 +99,11 @@ export class EventController {
   @Get('types')
   getEventTypes() {
     return Object.values(EventType);
+  }
+
+  @Get('levels')
+  getEventLevels() {
+    return Object.values(EventLevel);
   }
 
   @Get('slug/:slug')
