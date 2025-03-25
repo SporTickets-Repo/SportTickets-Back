@@ -100,4 +100,10 @@ export class UserController {
   async getUsers() {
     return this.userService.getUsers();
   }
+
+  @Roles(Role.ADMIN)
+  @Get('collaborators/:identifier')
+  async getCollaborators(@Param('identifier') identifier: string) {
+    return this.userService.getUserByIdentifier(identifier);
+  }
 }

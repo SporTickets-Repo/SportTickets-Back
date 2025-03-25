@@ -64,4 +64,15 @@ export class UserRepository {
   async getUsers(): Promise<User[]> {
     return this.prisma.user.findMany();
   }
+
+  async getUserByIdentifier(identifier: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { contains: identifier, mode: 'insensitive' } },
+          { document: { contains: identifier, mode: 'insensitive' } },
+        ],
+      },
+    });
+  }
 }

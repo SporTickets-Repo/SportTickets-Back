@@ -112,4 +112,13 @@ export class UserService {
 
     return result;
   }
+
+  async getUserByIdentifier(identifier: string) {
+    const existingUser =
+      await this.userRepository.getUserByIdentifier(identifier);
+    return {
+      exist: Boolean(existingUser),
+      user: existingUser,
+    };
+  }
 }
