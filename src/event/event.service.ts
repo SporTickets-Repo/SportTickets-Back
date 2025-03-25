@@ -1,7 +1,4 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { AddressEvent } from '@prisma/client';
-import { firstValueFrom } from 'rxjs';
 import { BlobService } from 'src/blob/blob.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
@@ -15,7 +12,6 @@ export class EventService {
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly blobService: BlobService,
-    private readonly httpService: HttpService,
   ) {}
 
   async create(
@@ -50,46 +46,15 @@ export class EventService {
       }
     }
 
-    const { cep, ...createEventDtoData } = createEventDto;
-
-    let addressData: AddressEvent = {} as AddressEvent;
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`https://viacep.com.br/ws/${cep}/json/`),
-      );
-      addressData = response.data;
-    } catch (error) {
-      this.logger.error('Error fetching address data', error);
-    }
-
     const createdEvent = await this.eventRepository.createEvent(
       {
-        ...(createEventDtoData as CreateEventDto),
+        ...createEventDto,
         startDate,
         endDate,
         bannerUrl,
       },
       userId,
     );
-
-    if (addressData) {
-      await this.eventRepository.createEventAddress({
-        eventId: createdEvent.id,
-        cep: addressData.cep,
-        logradouro: addressData.logradouro,
-        complemento: addressData.complemento,
-        unidade: addressData.unidade,
-        bairro: addressData.bairro,
-        localidade: addressData.localidade,
-        uf: addressData.uf,
-        estado: addressData.estado,
-        regiao: addressData.regiao,
-        ibge: addressData.ibge,
-        gia: addressData.gia,
-        ddd: addressData.ddd,
-        siafi: addressData.siafi,
-      } as AddressEvent);
-    }
 
     return createdEvent;
   }
