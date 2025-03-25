@@ -154,6 +154,13 @@ export class EventController {
     return this.eventService.getUserEvents(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.PARTNER)
+  @Post('init')
+  async initEvent(@Request() req: { user: User }) {
+    return this.eventService.initEvent(req.user.id);
+  }
+
   @Get('all')
   async getAllEvents(@Query(ValidationPipe) query: GetAllEventsDto) {
     const { page, limit, filter, sort } = query;

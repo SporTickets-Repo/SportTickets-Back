@@ -193,4 +193,20 @@ export class EventService {
   async getFilteredEvents(filters: FilterEventsDto) {
     return this.eventRepository.findFilteredEvents(filters);
   }
+
+  async initEvent(userId: string) {
+    const existingEmptyEvent =
+      await this.eventRepository.findEmptyEventByUser(userId);
+
+    if (existingEmptyEvent) {
+      return {
+        message: 'Event already initialized',
+        eventId: existingEmptyEvent.id,
+      };
+    }
+
+    const newEvent = await this.eventRepository.createEmptyEvent(userId);
+
+    return { message: 'Event initialized successfully', eventId: newEvent.id };
+  }
 }
