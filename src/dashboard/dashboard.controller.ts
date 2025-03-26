@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
@@ -13,6 +14,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { DashboardService } from './dashboard.service';
 import { AccessEventDto } from './dto/access-event.dto';
+import { AccessListEventDto } from './dto/acess-list-event.dto';
 import { EventIdParamDto } from './dto/event-id-param.dto';
 import { UserIdParamDto } from './dto/user-id-param.dto';
 
@@ -26,6 +28,14 @@ export class DashboardController {
   async assignAccess(@Body() data: AccessEventDto) {
     return this.dashboardService.assignDashboardAccess(
       data.userId,
+      data.eventId,
+    );
+  }
+
+  @Put('event/list/assign')
+  async assignListAccess(@Body() data: AccessListEventDto) {
+    return this.dashboardService.assignListDashboardAccess(
+      data.userIds,
       data.eventId,
     );
   }

@@ -14,6 +14,39 @@ export class DashboardRepository {
     });
   }
 
+  async addListAccess(userIds: string[], eventId: string) {
+    const existingAccesses = await this.prisma.eventDashboardAccess.findMany({
+      where: { eventId },
+    });
+
+    const existingUserIds = existingAccesses.map((acc) => acc.userId);
+
+    const toDelete = existingUserIds.filter((id) => !userIds.includes(id));
+    const toAdd = userIds.filter((id) => !existingUserIds.includes(id));
+
+    const deleteSteps = toDelete.map((userId) =>
+      this.prisma.eventDashboardAccess.delete({
+        where: {
+          userId_eventId: {
+            userId,
+            eventId,
+          },
+        },
+      }),
+    );
+
+    const addSteps = toAdd.map((userId) =>
+      this.prisma.eventDashboardAccess.create({
+        data: {
+          userId,
+          eventId,
+        },
+      }),
+    );
+
+    return this.prisma.$transaction([...deleteSteps, ...addSteps]);
+  }
+
   async removeAccess(userId: string, eventId: string) {
     return this.prisma.eventDashboardAccess.deleteMany({
       where: {
