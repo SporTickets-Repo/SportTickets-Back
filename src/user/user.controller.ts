@@ -105,8 +105,11 @@ export class UserController {
 
   @Roles(Role.ADMIN)
   @Get('collaborators/:identifier')
-  async getCollaborators(@Param('identifier') identifier: string) {
-    return this.userService.getUserByIdentifier(identifier);
+  async getCollaborators(
+    @Param('identifier') identifier: string,
+    @Request() req: { user: User },
+  ) {
+    return this.userService.getUserByIdentifier(identifier, req.user.id);
   }
 
   @Get('by-email/:email')

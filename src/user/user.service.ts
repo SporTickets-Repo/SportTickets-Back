@@ -115,9 +115,14 @@ export class UserService {
     return result;
   }
 
-  async getUserByIdentifier(identifier: string) {
+  async getUserByIdentifier(identifier: string, userId: string) {
     const existingUser =
       await this.userRepository.getUserByIdentifier(identifier);
+
+    if (existingUser?.id === userId) {
+      throw new ConflictException('You cannot add yourself as a collaborator');
+    }
+
     return {
       exist: Boolean(existingUser),
       user: existingUser,
