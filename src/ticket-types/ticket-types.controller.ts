@@ -16,6 +16,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+import { UpsertTicketTypeDto } from './dto/upsert-ticket.dto';
 import { TicketTypeService } from './ticket-types.service';
 
 @Controller('ticket-types')
@@ -27,6 +28,14 @@ export class TicketTypeController {
   @Post()
   createTicketType(@Body() createDto: CreateTicketTypeDto) {
     return this.ticketTypeService.create(createDto);
+  }
+
+  @Put('upsert/:eventId')
+  upsertTickets(
+    @Param('eventId') eventId: string,
+    @Body() dtos: UpsertTicketTypeDto[],
+  ) {
+    return this.ticketTypeService.bulkUpsert(dtos, eventId);
   }
 
   @Get()
