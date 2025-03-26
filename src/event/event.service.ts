@@ -199,4 +199,8 @@ export class EventService {
 
     return { message: 'Event initialized successfully', eventId: newEvent.id };
   }
+
+  async userHasEventPermission(userId: string, eventId: string) {
+    return this.eventRepository.userHasEventPermission(userId, eventId);
+  }
 }

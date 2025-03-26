@@ -30,7 +30,9 @@ export class EventRepository {
       where: { id },
       include: {
         ticketTypes: true,
-        coupons: true,
+        coupons: {
+          where: { deletedAt: null },
+        },
         bracket: true,
         address: true,
         eventDashboardAccess: true,
@@ -197,5 +199,26 @@ export class EventRepository {
         endDate: null,
       },
     });
+  }
+
+  async userHasEventPermission(
+    userId: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const event = await this.prisma.event.findFirst({
+      where: {
+        id: eventId,
+        OR: [
+          { createdBy: userId },
+          {
+            eventDashboardAccess: {
+              some: { userId },
+            },
+          },
+        ],
+      },
+    });
+
+    return !!event;
   }
 }

@@ -76,15 +76,18 @@ model Coupon {
   id         String    @id @default(uuid()) @db.Uuid
   eventId    String    @db.Uuid
   createdBy  String    @db.Uuid
-  name       String
+  name       String     
   percentage Decimal
   quantity   Int
+  isActive   Boolean?
   deletedAt  DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
   user  User  @relation(fields: [createdBy], references: [id])
 
   tickets Ticket[]
+
+  @@index([deletedAt])
 }
 
 model Ticket {
