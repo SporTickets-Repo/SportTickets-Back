@@ -18,13 +18,12 @@ export class DashboardRepository {
     const existingAccesses = await this.prisma.eventDashboardAccess.findMany({
       where: { eventId },
     });
-
     const existingUserIds = existingAccesses.map((acc) => acc.userId);
 
     const toDelete = existingUserIds.filter((id) => !userIds.includes(id));
     const toAdd = userIds.filter((id) => !existingUserIds.includes(id));
 
-    const deleteSteps = toDelete.map((userId) =>
+    const deleteOps = toDelete.map((userId) =>
       this.prisma.eventDashboardAccess.delete({
         where: {
           userId_eventId: {
@@ -35,7 +34,23 @@ export class DashboardRepository {
       }),
     );
 
-    const addSteps = toAdd.map((userId) =>
+    const downgradeOps = toDelete.map((userId) =>
+      this.prisma.user.updateMany({
+        where: {
+          id: userId,
+          role: 'PARTNER',
+
+          eventDashboardAccess: {
+            none: {},
+          },
+        },
+        data: {
+          role: 'USER',
+        },
+      }),
+    );
+
+    const addOps = toAdd.map((userId) =>
       this.prisma.eventDashboardAccess.create({
         data: {
           userId,
@@ -44,7 +59,24 @@ export class DashboardRepository {
       }),
     );
 
-    return this.prisma.$transaction([...deleteSteps, ...addSteps]);
+    const upgradeOps = toAdd.map((userId) =>
+      this.prisma.user.updateMany({
+        where: {
+          id: userId,
+          role: 'USER',
+        },
+        data: {
+          role: 'PARTNER',
+        },
+      }),
+    );
+
+    return this.prisma.$transaction([
+      ...deleteOps,
+      ...downgradeOps,
+      ...addOps,
+      ...upgradeOps,
+    ]);
   }
 
   async removeAccess(userId: string, eventId: string) {
