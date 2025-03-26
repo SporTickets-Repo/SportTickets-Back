@@ -75,4 +75,41 @@ export class UserRepository {
       },
     });
   }
+
+  async findUserByEmail(email: string): Promise<Partial<User> | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        profileImageUrl: true,
+        sex: true,
+      },
+    }) as Promise<Partial<User> | null>;
+  }
+
+  async findUserByEmailRegister(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async findUserByDocument(document: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { document } });
+  }
+
+  async findUserByPhone(phone: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { phone } });
+  }
+
+  async createUser(
+    data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<User> {
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        phone: data.phone ?? null,
+      },
+    });
+  }
 }

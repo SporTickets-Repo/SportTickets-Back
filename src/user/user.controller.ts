@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Request,
   UploadedFile,
   UseGuards,
@@ -22,6 +23,7 @@ import { Role, Sex, User } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
@@ -105,5 +107,19 @@ export class UserController {
   @Get('collaborators/:identifier')
   async getCollaborators(@Param('identifier') identifier: string) {
     return this.userService.getUserByIdentifier(identifier);
+  }
+
+  @Get('by-email/:email')
+  @ApiOperation({ summary: 'Get user details by email' })
+  @ApiOkResponse({ description: 'Returns user details' })
+  async getUserByEmail(@Param('email') email: string) {
+    return this.userService.getUserByEmail(email);
+  }
+
+  @Post('register')
+  @ApiOperation({ summary: 'Register a new user without password' })
+  @ApiOkResponse({ description: 'User successfully created.' })
+  async register(@Body() body: RegisterUserDto) {
+    return this.userService.registerUser(body);
   }
 }
