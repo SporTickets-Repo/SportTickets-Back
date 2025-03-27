@@ -216,7 +216,7 @@ export class TicketTypeRepository {
               await tx.personalizedField.update({
                 where: { id: pf.id },
                 data: {
-                  requestTitle: pf.question,
+                  requestTitle: pf.requestTitle,
                   type: pf.type,
                   optionsList: pf.optionsList ?? [],
                   deletedAt: null,
@@ -226,7 +226,7 @@ export class TicketTypeRepository {
               await tx.personalizedField.create({
                 data: {
                   ticketTypeId,
-                  requestTitle: pf.question,
+                  requestTitle: pf.requestTitle,
                   type: pf.type,
                   optionsList: pf.optionsList ?? [],
                 },

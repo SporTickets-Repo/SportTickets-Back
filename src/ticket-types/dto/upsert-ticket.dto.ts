@@ -38,7 +38,7 @@ export class PersonalizedFieldDto {
 
   @IsString()
   @IsNotEmpty({ message: 'O título da requisição é obrigatório' })
-  question: string; // in your schema, it was "requestTitle" in Prisma?
+  requestTitle: string;
 
   @IsString()
   @IsNotEmpty({ message: 'O tipo do campo é obrigatório' })
