@@ -1,9 +1,12 @@
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  ValidateNested,
 } from 'class-validator';
 
 export class UpdateBracketListDto {
@@ -22,4 +25,11 @@ export class UpdateBracketListDto {
   @IsBoolean()
   @IsNotEmpty()
   isActive: boolean;
+}
+
+export class UpdateBracketListWrapperDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateBracketListDto)
+  brackets: UpdateBracketListDto[];
 }

@@ -14,7 +14,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { BracketService } from './bracket.service';
 import { CreateBracketDto } from './dto/create-bracket.dto';
-import { UpdateBracketListDto } from './dto/update-bracket-list.dto';
+import { UpdateBracketListWrapperDto } from './dto/update-bracket-list.dto';
 import { UpdateBracketDto } from './dto/update-bracket.dto';
 
 @Controller('brackets')
@@ -60,8 +60,8 @@ export class BracketController {
   @Put('list/:id')
   async updateBracketList(
     @Param('id') eventId: string,
-    @Body() payload: UpdateBracketListDto[],
+    @Body() payload: UpdateBracketListWrapperDto,
   ) {
-    return this.bracketService.updateBracketList(eventId, payload);
+    return this.bracketService.updateBracketList(eventId, payload.brackets);
   }
 }

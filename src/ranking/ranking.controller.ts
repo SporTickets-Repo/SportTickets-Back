@@ -13,7 +13,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateRankingDto } from './dto/create-ranking.dto';
-import { UpdateRankingListDto } from './dto/update-ranking-list.dto';
+import { UpdateRankingListWrapperDto } from './dto/update-ranking-list.dto';
 import { UpdateRankingDto } from './dto/update-ranking.dto';
 import { RankingService } from './ranking.service';
 
@@ -57,8 +57,8 @@ export class RankingController {
   @Put('list/:id')
   async updateRankingList(
     @Param('id') eventId: string,
-    @Body() payload: UpdateRankingListDto[],
+    @Body() payload: UpdateRankingListWrapperDto,
   ) {
-    return this.rankingService.updateRankingList(eventId, payload);
+    return this.rankingService.updateRankingList(eventId, payload.rankings);
   }
 }
