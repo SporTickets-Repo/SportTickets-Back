@@ -29,7 +29,20 @@ export class EventRepository {
     return this.prisma.event.findUnique({
       where: { id },
       include: {
-        ticketTypes: true,
+        ticketTypes: {
+          where: { deletedAt: null },
+          include: {
+            ticketLots: {
+              where: { deletedAt: null },
+            },
+            categories: {
+              where: { deletedAt: null },
+            },
+            personalizedFields: {
+              where: { deletedAt: null },
+            },
+          },
+        },
         coupons: {
           where: { deletedAt: null },
         },
@@ -56,7 +69,10 @@ export class EventRepository {
 
   async findUserEvents(userId: string): Promise<Event[]> {
     return this.prisma.event.findMany({
-      where: { createdBy: userId },
+      where: {
+        createdBy: userId,
+        status: { not: EventStatus.CANCELLED },
+      },
       include: {
         ticketTypes: true,
         coupons: true,
