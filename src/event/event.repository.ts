@@ -60,6 +60,7 @@ export class EventRepository {
         ticketTypes: true,
         coupons: true,
         bracket: true,
+        ranking: true,
       },
     });
   }
