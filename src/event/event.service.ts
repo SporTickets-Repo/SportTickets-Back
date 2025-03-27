@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -202,5 +202,11 @@ export class EventService {
 
   async userHasEventPermission(userId: string, eventId: string) {
     return this.eventRepository.userHasEventPermission(userId, eventId);
+  }
+
+  async setStatus(eventId: string, status: EventStatus) {
+    const currentStatus = await this.eventRepository.getEventStatus(eventId);
+
+    return this.eventRepository.setStatus(eventId, status);
   }
 }
