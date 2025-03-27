@@ -91,12 +91,12 @@ export class TicketTypeRepository {
         },
       });
 
-      const existingIds = existingTicketTypes.map((t) => t.id);
-
-      const incomingIds = dtos.filter((dto) => dto.id).map((dto) => dto.id!);
+      const incomingTicketTypeIds = dtos
+        .filter((dto) => dto.id)
+        .map((dto) => dto.id!);
 
       const toSoftDelete = existingTicketTypes.filter(
-        (et) => !incomingIds.includes(et.id),
+        (et) => !incomingTicketTypeIds.includes(et.id),
       );
 
       for (const t of toSoftDelete) {
@@ -112,13 +112,6 @@ export class TicketTypeRepository {
         if (dto.id) {
           ticketType = await tx.ticketType.findUnique({
             where: { id: dto.id },
-          });
-        } else {
-          ticketType = await tx.ticketType.findFirst({
-            where: {
-              eventId,
-              name: dto.name,
-            },
           });
         }
 
