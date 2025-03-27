@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Bracket, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBracketDto } from './dto/create-bracket.dto';
+import { UpdateBracketListDto } from './dto/update-bracket-list.dto';
 
 @Injectable()
 export class BracketRepository {
@@ -45,5 +46,46 @@ export class BracketRepository {
     return this.prisma.bracket.delete({
       where: { id },
     });
+  }
+
+  async findByNameAndEvent(name: string, eventId: string) {
+    return this.prisma.bracket.findFirst({
+      where: { name, eventId },
+    });
+  }
+
+  async updateBracketList(eventId: string, brackets: UpdateBracketListDto[]) {
+    const existing = await this.findBracketsByEvent(eventId);
+    const existingIds = existing.map((b) => b.id);
+    const incomingIds = brackets.filter((b) => b.id).map((b) => b.id!);
+
+    const toDelete = existing.filter((b) => !incomingIds.includes(b.id));
+
+    return this.prisma.$transaction([
+      ...toDelete.map((b) =>
+        this.prisma.bracket.delete({ where: { id: b.id } }),
+      ),
+      ...brackets.map((b) => {
+        if (b.id && existingIds.includes(b.id)) {
+          return this.prisma.bracket.update({
+            where: { id: b.id },
+            data: {
+              name: b.name,
+              url: b.url,
+              isActive: b.isActive,
+            },
+          });
+        } else {
+          return this.prisma.bracket.create({
+            data: {
+              name: b.name,
+              url: b.url,
+              isActive: b.isActive,
+              eventId,
+            },
+          });
+        }
+      }),
+    ]);
   }
 }
