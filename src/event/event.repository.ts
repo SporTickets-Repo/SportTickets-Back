@@ -34,6 +34,7 @@ export class EventRepository {
         bracket: true,
         address: true,
         eventDashboardAccess: true,
+        ranking: true,
       },
     });
   }

@@ -11,6 +11,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { TicketLotModule } from './ticket-lot/ticket-lot.module';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
+import { RankingModule } from './ranking/ranking.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UserModule } from './user/user.module';
     PersonalizedFieldsModule,
     TicketLotModule,
     CouponModule,
+    RankingModule,
   ],
   controllers: [],
   providers: [PrismaService],
