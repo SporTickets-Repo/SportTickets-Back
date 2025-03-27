@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ConflictException,
   Injectable,
@@ -113,6 +112,20 @@ export class UserService {
     const result = users.map(({ password, ...user }) => user);
 
     return result;
+  }
+
+  async getUserByIdentifier(identifier: string, userId: string) {
+    const existingUser =
+      await this.userRepository.getUserByIdentifier(identifier);
+
+    if (existingUser?.id === userId) {
+      throw new ConflictException('You cannot add yourself as a collaborator');
+    }
+
+    return {
+      exist: Boolean(existingUser),
+      user: existingUser,
+    };
   }
 
   async getUserByEmail(email: string) {

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AddressEvent, Event, Prisma } from '@prisma/client';
+import { AddressEvent, Event, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
@@ -30,7 +30,9 @@ export class EventRepository {
       where: { id },
       include: {
         ticketTypes: true,
-        coupons: true,
+        coupons: {
+          where: { deletedAt: null },
+        },
         bracket: true,
         address: true,
         eventDashboardAccess: true,
@@ -198,6 +200,47 @@ export class EventRepository {
         startDate: null,
         endDate: null,
       },
+    });
+  }
+
+  async userHasEventPermission(
+    userId: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const event = await this.prisma.event.findFirst({
+      where: {
+        id: eventId,
+        OR: [
+          { createdBy: userId },
+          {
+            eventDashboardAccess: {
+              some: { userId },
+            },
+          },
+        ],
+      },
+    });
+
+    return !!event;
+  }
+
+  async getEventStatus(eventId: string): Promise<EventStatus> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { status: true },
+    });
+
+    if (!event) {
+      throw new Error(`Event with ID ${eventId} not found`);
+    }
+
+    return event.status;
+  }
+
+  async setStatus(eventId: string, status: EventStatus): Promise<Event> {
+    return this.prisma.event.update({
+      where: { id: eventId },
+      data: { status },
     });
   }
 }

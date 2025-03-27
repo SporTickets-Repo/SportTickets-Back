@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { EventLevel, EventType, Role, User } from '@prisma/client';
+import { EventLevel, EventStatus, EventType, Role, User } from '@prisma/client';
 import { isUUID } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -114,5 +114,13 @@ export class EventController {
   @Get(':id')
   async getEvent(@Param(ValidationPipe) payload: GetEventByIdDto) {
     return this.eventService.getOne(payload.id);
+  }
+
+  @Put(':eventId/set-status')
+  async publishEvent(
+    @Param('eventId') eventId: string,
+    @Body() body: { status: EventStatus },
+  ) {
+    return this.eventService.setStatus(eventId, body.status);
   }
 }

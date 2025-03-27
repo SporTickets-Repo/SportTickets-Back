@@ -13,7 +13,6 @@ export class CategoryRepository {
       data: {
         ticketTypeId: data.ticketTypeId,
         title: data.title,
-        description: data.description,
         quantity: data.quantity,
       },
     });

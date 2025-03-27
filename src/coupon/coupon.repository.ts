@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
+import { UpdateCouponsListDto } from './dto/update-coupons-list';
 
 @Injectable()
 export class CouponRepository {
@@ -38,7 +39,7 @@ export class CouponRepository {
 
   async findCouponByNameAndEvent(name: string, eventId: string) {
     return this.prisma.coupon.findFirst({
-      where: { name, eventId },
+      where: { name, eventId, deletedAt: null },
     });
   }
 
@@ -53,5 +54,58 @@ export class CouponRepository {
         deletedAt: null,
       },
     });
+  }
+
+  async updateCouponsList(
+    userId: string,
+    eventId: string,
+    coupons: UpdateCouponsListDto[],
+  ) {
+    const now = new Date();
+
+    const validCoupons = coupons.filter((c): c is UpdateCouponsListDto => !!c);
+
+    const existingCoupons = await this.findAllByEvent(eventId);
+    const existingIds = existingCoupons.map((c) => c.id);
+
+    const incomingIds = validCoupons
+      .filter((c): c is UpdateCouponsListDto => !!c.id)
+      .map((c) => c.id);
+
+    const toDelete = existingCoupons.filter((c) => !incomingIds.includes(c.id));
+
+    return this.prisma.$transaction([
+      ...toDelete.map((coupon) =>
+        this.prisma.coupon.update({
+          where: { id: coupon.id },
+          data: { deletedAt: now, isActive: false },
+        }),
+      ),
+
+      ...validCoupons.map((coupon) => {
+        if (coupon.id && existingIds.includes(coupon.id)) {
+          return this.prisma.coupon.update({
+            where: { id: coupon.id },
+            data: {
+              name: coupon.name,
+              percentage: coupon.percentage,
+              quantity: coupon.quantity,
+              isActive: coupon.isActive,
+            },
+          });
+        } else {
+          return this.prisma.coupon.create({
+            data: {
+              name: coupon.name,
+              percentage: coupon.percentage,
+              quantity: coupon.quantity,
+              eventId,
+              createdBy: userId,
+              isActive: coupon.isActive,
+            },
+          });
+        }
+      }),
+    ]);
   }
 }

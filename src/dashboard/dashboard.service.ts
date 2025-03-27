@@ -9,6 +9,10 @@ export class DashboardService {
     return this.dashboardRepository.addAccess(userId, eventId);
   }
 
+  async assignListDashboardAccess(userId: string[], eventId: string) {
+    return this.dashboardRepository.addListAccess(userId, eventId);
+  }
+
   async revokeDashboardAccess(userId: string, eventId: string) {
     return this.dashboardRepository.removeAccess(userId, eventId);
   }

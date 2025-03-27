@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -101,7 +101,6 @@ export class EventService {
 
     const { address, ...rest } = updateEventDto;
 
-    // Garante que paymentMethods seja sempre um array
     const paymentMethods =
       updateEventDto.paymentMethods &&
       !Array.isArray(updateEventDto.paymentMethods)
@@ -112,7 +111,7 @@ export class EventService {
       ...rest,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
-      paymentMethods, // agora sempre um array ou undefined
+      paymentMethods: paymentMethods ?? [],
       bannerUrl,
       smallImageUrl,
       ...(address
@@ -199,5 +198,15 @@ export class EventService {
     const newEvent = await this.eventRepository.createEmptyEvent(userId);
 
     return { message: 'Event initialized successfully', eventId: newEvent.id };
+  }
+
+  async userHasEventPermission(userId: string, eventId: string) {
+    return this.eventRepository.userHasEventPermission(userId, eventId);
+  }
+
+  async setStatus(eventId: string, status: EventStatus) {
+    const currentStatus = await this.eventRepository.getEventStatus(eventId);
+
+    return this.eventRepository.setStatus(eventId, status);
   }
 }
