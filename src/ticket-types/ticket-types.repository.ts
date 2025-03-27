@@ -36,9 +36,15 @@ export class TicketTypeRepository {
     return this.prisma.ticketType.findMany({
       where: { eventId, deletedAt: null },
       include: {
-        categories: true,
-        personalizedFields: true,
-        ticketLots: true,
+        categories: {
+          where: { deletedAt: null },
+        },
+        personalizedFields: {
+          where: { deletedAt: null },
+        },
+        ticketLots: {
+          where: { deletedAt: null },
+        },
       },
     });
   }
