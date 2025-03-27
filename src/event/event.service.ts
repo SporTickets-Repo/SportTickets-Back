@@ -189,6 +189,12 @@ export class EventService {
       await this.eventRepository.findEmptyEventByUser(userId);
 
     if (existingEmptyEvent) {
+      if (existingEmptyEvent.status === EventStatus.CANCELLED) {
+        await this.eventRepository.setStatus(
+          existingEmptyEvent.id,
+          EventStatus.DRAFT,
+        );
+      }
       return {
         message: 'Event already initialized',
         eventId: existingEmptyEvent.id,
