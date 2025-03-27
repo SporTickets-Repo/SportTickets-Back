@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AddressEvent, Event, Prisma } from '@prisma/client';
+import { AddressEvent, Event, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
@@ -100,6 +100,13 @@ export class EventRepository {
 
     // Construção do objeto "where"
     const where: Prisma.EventWhereInput = {};
+    where.status = {
+      in: [
+        EventStatus.REGISTRATION,
+        EventStatus.PROGRESS,
+        EventStatus.FINISHED,
+      ],
+    };
 
     // 1) Filtro por título (pesquisa parcial "contains", case insensitive)
     if (name) {
