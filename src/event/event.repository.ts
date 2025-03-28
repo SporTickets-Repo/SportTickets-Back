@@ -93,6 +93,7 @@ export class EventRepository {
         },
         bracket: true,
         address: true,
+        ranking: true,
       },
     });
   }
