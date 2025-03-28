@@ -34,22 +34,6 @@ export class DashboardRepository {
       }),
     );
 
-    const downgradeOps = toDelete.map((userId) =>
-      this.prisma.user.updateMany({
-        where: {
-          id: userId,
-          role: 'PARTNER',
-
-          eventDashboardAccess: {
-            none: {},
-          },
-        },
-        data: {
-          role: 'USER',
-        },
-      }),
-    );
-
     const addOps = toAdd.map((userId) =>
       this.prisma.eventDashboardAccess.create({
         data: {
@@ -59,24 +43,7 @@ export class DashboardRepository {
       }),
     );
 
-    const upgradeOps = toAdd.map((userId) =>
-      this.prisma.user.updateMany({
-        where: {
-          id: userId,
-          role: 'USER',
-        },
-        data: {
-          role: 'PARTNER',
-        },
-      }),
-    );
-
-    return this.prisma.$transaction([
-      ...deleteOps,
-      ...downgradeOps,
-      ...addOps,
-      ...upgradeOps,
-    ]);
+    return this.prisma.$transaction([...deleteOps, ...addOps]);
   }
 
   async removeAccess(userId: string, eventId: string) {

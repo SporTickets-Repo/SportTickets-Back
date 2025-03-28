@@ -48,7 +48,19 @@ export class EventRepository {
         },
         bracket: true,
         address: true,
-        eventDashboardAccess: true,
+        eventDashboardAccess: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                profileImageUrl: true,
+              },
+            },
+          },
+        },
       },
     });
   }
