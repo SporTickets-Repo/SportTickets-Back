@@ -176,7 +176,8 @@ model TicketLot {
   ticketTypeId String   @db.Uuid
   name         String
   price        Decimal
-  quantity     Int
+  quantity     Int   @default(0)
+  soldQuantity Int   @default(0)
   startDate    DateTime
   endDate      DateTime
   isActive     Boolean  @default(false)
