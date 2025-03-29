@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { BlobModule } from './blob/blob.module';
 import { BracketModule } from './bracket/bracket.module';
 import { CategoryModule } from './category/category.module';
+import { CheckoutModule } from './checkout/checkout.module';
 import { CouponModule } from './coupon/coupon.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EventModule } from './event/event.module';
@@ -26,6 +27,7 @@ import { UserModule } from './user/user.module';
     PersonalizedFieldsModule,
     TicketLotModule,
     CouponModule,
+    CheckoutModule,
   ],
   controllers: [],
   providers: [PrismaService],
