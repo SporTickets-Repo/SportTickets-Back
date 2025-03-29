@@ -108,6 +108,13 @@ model Ticket {
   coupon      Coupon      @relation(fields: [couponId], references: [id])
 
   personalizedFieldAnswers PersonalizedFieldAnswer[]
+  teamId    String?  @db.Uuid
+  team      Team?    @relation(fields: [teamId], references: [id])
+}
+
+model Team {
+  id      String   @id @default(uuid()) @db.Uuid
+  tickets Ticket[]
 }
 
 model Bracket {
