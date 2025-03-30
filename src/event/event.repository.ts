@@ -107,20 +107,34 @@ export class EventRepository {
   }
 
   async findEventBySlug(slug: string): Promise<Event | null> {
-    return this.prisma.event.findUnique({
+    const now = new Date();
+    const event = this.prisma.event.findUnique({
       where: { slug },
       include: {
         ticketTypes: {
           include: {
-            ticketLots: true,
-            categories: true,
-            personalizedFields: true,
+            ticketLots: {
+              where: {
+                deletedAt: null,
+                isActive: true,
+                startDate: { lte: now },
+                endDate: { gte: now },
+              },
+            },
+            categories: {
+              where: { deletedAt: null },
+            },
+            personalizedFields: {
+              where: { deletedAt: null },
+            },
           },
         },
         bracket: true,
         address: true,
       },
     });
+
+    return event;
   }
 
   async findFilteredEvents(filters: FilterEventsDto): Promise<Event[]> {
@@ -275,5 +289,23 @@ export class EventRepository {
       where: { id: eventId },
       data: { status },
     });
+  }
+
+  async findActiveLot(ticketTypeId: string) {
+    const now = new Date();
+
+    const lot = await this.prisma.ticketLot.findFirst({
+      where: {
+        ticketTypeId,
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: {
+        startDate: 'asc',
+      },
+    });
+
+    return lot;
   }
 }
