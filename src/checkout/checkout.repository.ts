@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
@@ -7,7 +8,7 @@ import { CreateCheckoutDto } from './dto/create-checkout.dto';
 export class CheckoutRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async performCheckout(dto: CreateCheckoutDto) {
+  async performCheckout(dto: CreateCheckoutDto, user: User) {
     const { teams, couponId } = dto;
 
     const now = new Date();
@@ -19,6 +20,7 @@ export class CheckoutRepository {
         data: {
           status: 'PENDING',
           totalValue: totalValue,
+          createdById: user.id,
         },
       });
 
@@ -84,7 +86,31 @@ export class CheckoutRepository {
         data: { totalValue },
       });
 
-      return transaction;
+      const createdTransaction = await tx.transaction.findUnique({
+        where: { id: transaction.id },
+        include: {
+          createdBy: true,
+          tickets: {
+            include: {
+              ticketLot: {
+                include: {
+                  ticketType: true,
+                },
+              },
+              personalizedFieldAnswers: {
+                include: {
+                  personalizedField: true,
+                },
+              },
+              user: true,
+              category: true,
+              coupon: true,
+            },
+          },
+        },
+      });
+
+      return createdTransaction;
     });
   }
 }

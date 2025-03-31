@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
@@ -10,18 +11,19 @@ export class CheckoutService {
     private readonly paymentService: PaymentService,
   ) {}
 
-  async createOrder(dto: CreateCheckoutDto) {
-    const checkoutResult = await this.checkoutRepository.performCheckout(dto);
-    console.log('Checkout Result:', checkoutResult);
+  async createOrder(dto: CreateCheckoutDto, user: User) {
+    const checkoutResult = await this.checkoutRepository.performCheckout(
+      dto,
+      user,
+    );
 
-    return checkoutResult;
-    // const paymentResult = await this.paymentService.processPayment(
-    //   checkoutResult,
-    //   Number(total),
-    //   transactionId,
-    // );
+    console.log('Checkout result:', checkoutResult);
 
-    // Return both the order and payment details
-    //return { ...checkoutResult, payment: paymentResult };
+    const paymentResult =
+      await this.paymentService.processPayment(checkoutResult);
+
+    console.log('Payment result:', paymentResult.data);
+
+    return paymentResult;
   }
 }
