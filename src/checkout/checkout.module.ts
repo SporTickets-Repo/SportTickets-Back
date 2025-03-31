@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CheckoutController } from './checkout.controller';
+import { CheckoutRepository } from './checkout.repository';
 import { CheckoutService } from './checkout.service';
 
 @Module({
   controllers: [CheckoutController],
-  providers: [CheckoutService, PrismaService],
+  providers: [CheckoutService, PrismaService, CheckoutRepository],
 })
 export class CheckoutModule {}

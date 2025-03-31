@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   ValidateNested,
 } from 'class-validator';
 
@@ -16,10 +17,10 @@ class PersonalizedFieldDto {
 }
 
 class PlayerDto {
-  @IsString()
+  @IsUUID()
   userId: string;
 
-  @IsString()
+  @IsUUID()
   categoryId: string;
 
   @IsArray()
@@ -29,7 +30,7 @@ class PlayerDto {
 }
 
 class TeamDto {
-  @IsString()
+  @IsUUID()
   ticketTypeId: string;
 
   @IsArray()
@@ -95,7 +96,8 @@ export class CreateCheckoutDto {
   @Type(() => TeamDto)
   teams: TeamDto[];
 
-  @IsString()
+  @IsUUID()
+  @IsOptional()
   couponId: string;
 
   @ValidateNested()
