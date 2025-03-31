@@ -21,9 +21,10 @@ export interface PaymentData {
     };
   };
   payer: {
+    entity_type: string;
+    type: string;
     email: string;
-    first_name: string;
-    last_name: string;
+    id: string | null;
     identification: {
       type: string;
       number: string;
@@ -45,6 +46,6 @@ export interface PaymentData {
       },
     ];
   };
-  application_fee: number;
+  application_fee?: number;
   external_reference: string;
 }

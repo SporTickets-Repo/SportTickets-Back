@@ -289,10 +289,15 @@ enum EventLevel {
 }
 
 enum TransactionStatus {
-  PENDING
-  PAID
-  CANCELLED
-  REFUNDED
+  PENDING 
+  APPROVED 
+  AUTHORIZED 
+  IN_PROCESS 
+  IN_MEDIATION 
+  REJECTED 
+  CANCELLED 
+  REFUNDED 
+  CHARGED_BACK 
 }
 
 enum Restriction {

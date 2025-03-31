@@ -23,25 +23,32 @@ export class MercadoPagoGateway implements PaymentGateway {
     const transactionId = checkoutResult.id;
     const totalValue = Number(checkoutResult.totalValue);
 
-    if (paymentData.paymentMethodId == 'credit_card') {
-      const cardTokenResponse = await lastValueFrom(
-        this.httpService.post(
-          'https://api.mercadopago.com/v1/card_tokens',
-          {
-            card_number: paymentData.cardNumber,
-            security_code: paymentData.securityCode,
-            expiration_month: paymentData.expirationMonth,
-            expiration_year: paymentData.expirationYear,
-            cardholder: paymentData.cardHolder,
-          },
-          {
-            headers: {
-              'X-Idempotency-Key': transactionId,
-              Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+    if (paymentData.paymentMethodId === 'credit_card') {
+      let cardTokenResponse;
+      try {
+        cardTokenResponse = await lastValueFrom(
+          this.httpService.post(
+            'https://api.mercadopago.com/v1/card_tokens',
+            {
+              card_number: paymentData.cardNumber,
+              security_code: paymentData.securityCode,
+              expiration_month: paymentData.expirationMonth,
+              expiration_year: (paymentData.expirationYear as number) + 2000,
+              cardholder: paymentData.cardHolder,
             },
-          },
-        ),
-      );
+            {
+              headers: {
+                'X-Idempotency-Key': transactionId,
+                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+              },
+            },
+          ),
+        );
+      } catch (error: any) {
+        throw new BadRequestException(
+          `Erro ao criar token do cartão: ${error.response?.data?.message || error.message}`,
+        );
+      }
 
       const cardToken = cardTokenResponse.data.id;
       if (!cardToken) {
@@ -52,26 +59,33 @@ export class MercadoPagoGateway implements PaymentGateway {
         transaction_amount: totalValue,
         token: cardToken,
         installments: paymentData.installments,
-        payment_method_id: paymentData.paymentMethodId,
         payer: paymentData.payer,
         additional_info: paymentData.additional_info,
         description: `Payment for transaction ${transactionId}`,
-        application_fee: 10,
+        // application_fee: 10,
+        notification_url:
+          'https://343d-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/checkout/webhook',
       };
 
-      const paymentResponse = await lastValueFrom(
-        this.httpService.post(
-          'https://api.mercadopago.com/v1/payments',
-          paymentPayload,
-          {
-            headers: {
-              'X-Idempotency-Key': transactionId,
-              Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+      let paymentResponse;
+      try {
+        paymentResponse = await lastValueFrom(
+          this.httpService.post(
+            'https://api.mercadopago.com/v1/payments',
+            paymentPayload,
+            {
+              headers: {
+                'X-Idempotency-Key': transactionId,
+                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+              },
             },
-          },
-        ),
-      );
-
+          ),
+        );
+      } catch (error: any) {
+        throw new BadRequestException(
+          `Erro ao processar pagamento com cartão: ${error.response?.data?.message || error.message}`,
+        );
+      }
       return paymentResponse.data;
     } else if (paymentData.paymentMethodId === 'pix') {
       const paymentPayload = {
@@ -80,22 +94,30 @@ export class MercadoPagoGateway implements PaymentGateway {
         payer: paymentData.payer,
         additional_info: paymentData.additional_info,
         description: `Payment for transaction ${transactionId}`,
-        application_fee: 10,
+        // application_fee: 10,
+        notification_url:
+          'https://343d-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/checkout/webhook',
       };
 
-      const paymentResponse = await lastValueFrom(
-        this.httpService.post(
-          'https://api.mercadopago.com/v1/payments',
-          paymentPayload,
-          {
-            headers: {
-              'X-Idempotency-Key': transactionId,
-              Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+      let paymentResponse;
+      try {
+        paymentResponse = await lastValueFrom(
+          this.httpService.post(
+            'https://api.mercadopago.com/v1/payments',
+            paymentPayload,
+            {
+              headers: {
+                'X-Idempotency-Key': transactionId,
+                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+              },
             },
-          },
-        ),
-      );
-
+          ),
+        );
+      } catch (error: any) {
+        throw new BadRequestException(
+          `Erro ao processar pagamento com PIX: ${error.response?.data?.message || error.message}`,
+        );
+      }
       return paymentResponse.data;
     } else {
       throw new BadRequestException('Unsupported payment method');
@@ -129,8 +151,9 @@ export class MercadoPagoGateway implements PaymentGateway {
       email: createdBy.email,
       payer: {
         email: createdBy.email,
-        first_name: firstName,
-        last_name: lastName,
+        id: null,
+        entity_type: 'individual',
+        type: 'customer',
         identification: {
           type: createdBy.documentType,
           number: createdBy.document,
@@ -139,7 +162,7 @@ export class MercadoPagoGateway implements PaymentGateway {
       additional_info: {
         items: items,
       },
-      application_fee: 10,
+      // application_fee: 10,
     };
 
     if (paymentData.paymentMethodId === 'credit_card') {

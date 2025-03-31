@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
@@ -35,6 +35,7 @@ export class CheckoutRepository {
               isActive: true,
               startDate: { lte: now },
               endDate: { gte: now },
+              deletedAt: null,
             },
             orderBy: { startDate: 'asc' },
           });
@@ -121,6 +122,7 @@ export class CheckoutRepository {
       data: {
         externalPaymentId: data?.id.toString(),
         externalStatus: data?.status,
+        status: mapStatus(data?.status),
         pixQRCode:
           data?.point_of_interaction?.transaction_data?.qr_code || null,
         pixQRCodeBase64:
@@ -128,5 +130,30 @@ export class CheckoutRepository {
         response: data,
       },
     });
+  }
+}
+
+function mapStatus(externalStatus: string): TransactionStatus {
+  switch (externalStatus) {
+    case 'pending':
+      return TransactionStatus.PENDING;
+    case 'approved':
+      return TransactionStatus.APPROVED;
+    case 'authorized':
+      return TransactionStatus.AUTHORIZED;
+    case 'in_process':
+      return TransactionStatus.IN_PROCESS;
+    case 'in_mediation':
+      return TransactionStatus.IN_MEDIATION;
+    case 'rejected':
+      return TransactionStatus.REJECTED;
+    case 'cancelled':
+      return TransactionStatus.CANCELLED;
+    case 'refunded':
+      return TransactionStatus.REFUNDED;
+    case 'charged_back':
+      return TransactionStatus.CHARGED_BACK;
+    default:
+      return TransactionStatus.PENDING;
   }
 }

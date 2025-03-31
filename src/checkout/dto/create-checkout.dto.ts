@@ -75,6 +75,7 @@ class CardDataDto {
   installments: number;
 
   @IsString()
+  @IsOptional()
   cardBrand: string;
 
   @ValidateNested()
