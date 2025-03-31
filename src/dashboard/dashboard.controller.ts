@@ -20,7 +20,7 @@ import { UserIdParamDto } from './dto/user-id-param.dto';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.ADMIN, Role.PARTNER)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 

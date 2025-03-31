@@ -76,9 +76,14 @@ export class UserRepository {
     });
   }
 
-  async findUserByEmail(email: string): Promise<Partial<User> | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
+  async findUserByEmail(identifier: string): Promise<Partial<User> | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { contains: identifier, mode: 'insensitive' } },
+          { document: { contains: identifier, mode: 'insensitive' } },
+        ],
+      },
       select: {
         id: true,
         email: true,

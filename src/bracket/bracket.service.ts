@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { UpdateBracketDto } from './dto/update-bracket.dto';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { BracketRepository } from './bracket.repository';
 import { CreateBracketDto } from './dto/create-bracket.dto';
+import { UpdateBracketListDto } from './dto/update-bracket-list.dto';
+import { UpdateBracketDto } from './dto/update-bracket.dto';
 
 @Injectable()
 export class BracketService {
@@ -40,5 +45,27 @@ export class BracketService {
       throw new NotFoundException('Bracket not found');
     }
     return { message: 'Bracket deleted successfully' };
+  }
+
+  async updateBracketList(eventId: string, brackets: UpdateBracketListDto[]) {
+    const names = brackets.map((b) => b.name);
+    const uniqueNames = new Set(names);
+    if (names.length !== uniqueNames.size) {
+      throw new ConflictException('Duplicate bracket names are not allowed');
+    }
+
+    for (const bracket of brackets) {
+      const existing = await this.bracketRepository.findByNameAndEvent(
+        bracket.name,
+        eventId,
+      );
+      if (existing && existing.id !== bracket.id) {
+        throw new ConflictException(
+          `Bracket name "${bracket.name}" already exists for this event`,
+        );
+      }
+    }
+
+    return this.bracketRepository.updateBracketList(eventId, brackets);
   }
 }

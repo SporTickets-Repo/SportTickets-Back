@@ -97,13 +97,13 @@ export class UserController {
     return this.userService.updateUserRole(userId, updateRoleDto);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @Get('all')
   async getUsers() {
     return this.userService.getUsers();
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN)
   @Get('collaborators/:identifier')
   async getCollaborators(
     @Param('identifier') identifier: string,
