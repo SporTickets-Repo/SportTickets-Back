@@ -36,7 +36,6 @@ export class MercadoPagoGateway implements PaymentGateway {
           },
           {
             headers: {
-              'X-Idempotency-Key': transactionId,
               Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
             },
           },
