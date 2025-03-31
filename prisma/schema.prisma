@@ -97,7 +97,7 @@ model Ticket {
   transactionId String   @db.Uuid
   ticketLotId   String   @db.Uuid
   categoryId    String   @db.Uuid
-  couponId      String   @db.Uuid
+  couponId      String?   @db.Uuid
   price         Decimal
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -106,7 +106,7 @@ model Ticket {
   transaction Transaction @relation(fields: [transactionId], references: [id])
   ticketLot   TicketLot   @relation(fields: [ticketLotId], references: [id])
   category    Category    @relation("TicketToCategory", fields: [categoryId], references: [id])
-  coupon      Coupon      @relation(fields: [couponId], references: [id])
+  coupon      Coupon?     @relation(fields: [couponId], references: [id])
 
   personalizedFieldAnswers PersonalizedFieldAnswer[]
   teamId    String?  @db.Uuid
