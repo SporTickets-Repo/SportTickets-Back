@@ -32,6 +32,7 @@ model User {
 
   eventDashboardAccess EventDashboardAccess[]
   Coupon               Coupon[]
+  transactions        Transaction[]
 }
 
 model Event {
@@ -69,8 +70,21 @@ model Transaction {
   id         String            @id @default(uuid()) @db.Uuid
   status     TransactionStatus @default(PENDING)
   totalValue Decimal
+  createdById String            @db.Uuid
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  
+  paymentMethod String?
+  externalPaymentId String?
+  externalStatus String?
+  paymentProvider PaymentProvider?
+  paidAt DateTime?
+  pixQRCode String?
+  pixQRCodeBase64 String?
+  response Json?
 
   tickets Ticket[]
+  createdBy    User   @relation(fields: [createdById], references: [id])
 }
 
 model Coupon {
@@ -295,4 +309,10 @@ enum PaymentMethod {
   PIX
   CREDIT_CARD
   BOLETO
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  MERCADOPAGO
 }
