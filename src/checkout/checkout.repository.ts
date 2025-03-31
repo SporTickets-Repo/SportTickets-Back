@@ -84,10 +84,7 @@ export class CheckoutRepository {
         data: { totalValue },
       });
 
-      return {
-        transactionId: transaction.id,
-        total: totalValue.toFixed(2),
-      };
+      return transaction;
     });
   }
 }
