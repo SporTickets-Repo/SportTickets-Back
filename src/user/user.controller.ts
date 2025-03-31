@@ -103,6 +103,15 @@ export class UserController {
     return this.userService.getUsers();
   }
 
+  @Roles(Role.ADMIN)
+  @Get('collaborators/:identifier')
+  async getCollaborators(
+    @Param('identifier') identifier: string,
+    @Request() req: { user: User },
+  ) {
+    return this.userService.getUserByIdentifier(identifier, req.user.id);
+  }
+
   @Get('by-email/:email')
   @ApiOperation({ summary: 'Get user details by email' })
   @ApiOkResponse({ description: 'Returns user details' })

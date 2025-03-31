@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "TicketLot" ADD COLUMN     "soldQuantity" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "quantity" SET DEFAULT 0;

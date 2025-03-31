@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AddressEvent, Event, Prisma } from '@prisma/client';
+import { AddressEvent, Event, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
@@ -29,11 +29,38 @@ export class EventRepository {
     return this.prisma.event.findUnique({
       where: { id },
       include: {
-        ticketTypes: true,
-        coupons: true,
+        ticketTypes: {
+          where: { deletedAt: null },
+          include: {
+            ticketLots: {
+              where: { deletedAt: null },
+            },
+            categories: {
+              where: { deletedAt: null },
+            },
+            personalizedFields: {
+              where: { deletedAt: null },
+            },
+          },
+        },
+        coupons: {
+          where: { deletedAt: null },
+        },
         bracket: true,
         address: true,
-        eventDashboardAccess: true,
+        eventDashboardAccess: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                profileImageUrl: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -54,7 +81,10 @@ export class EventRepository {
 
   async findUserEvents(userId: string): Promise<Event[]> {
     return this.prisma.event.findMany({
-      where: { createdBy: userId },
+      where: {
+        createdBy: userId,
+        status: { not: EventStatus.CANCELLED },
+      },
       include: {
         ticketTypes: true,
         coupons: true,
@@ -77,20 +107,34 @@ export class EventRepository {
   }
 
   async findEventBySlug(slug: string): Promise<Event | null> {
-    return this.prisma.event.findUnique({
+    const now = new Date();
+    const event = this.prisma.event.findUnique({
       where: { slug },
       include: {
         ticketTypes: {
           include: {
-            ticketLots: true,
-            categories: true,
-            personalizedFields: true,
+            ticketLots: {
+              where: {
+                deletedAt: null,
+                isActive: true,
+                startDate: { lte: now },
+                endDate: { gte: now },
+              },
+            },
+            categories: {
+              where: { deletedAt: null },
+            },
+            personalizedFields: {
+              where: { deletedAt: null },
+            },
           },
         },
         bracket: true,
         address: true,
       },
     });
+
+    return event;
   }
 
   async findFilteredEvents(filters: FilterEventsDto): Promise<Event[]> {
@@ -98,6 +142,13 @@ export class EventRepository {
 
     // Construção do objeto "where"
     const where: Prisma.EventWhereInput = {};
+    where.status = {
+      in: [
+        EventStatus.REGISTRATION,
+        EventStatus.PROGRESS,
+        EventStatus.FINISHED,
+      ],
+    };
 
     // 1) Filtro por título (pesquisa parcial "contains", case insensitive)
     if (name) {
@@ -197,5 +248,64 @@ export class EventRepository {
         endDate: null,
       },
     });
+  }
+
+  async userHasEventPermission(
+    userId: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const event = await this.prisma.event.findFirst({
+      where: {
+        id: eventId,
+        OR: [
+          { createdBy: userId },
+          {
+            eventDashboardAccess: {
+              some: { userId },
+            },
+          },
+        ],
+      },
+    });
+
+    return !!event;
+  }
+
+  async getEventStatus(eventId: string): Promise<EventStatus> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { status: true },
+    });
+
+    if (!event) {
+      throw new Error(`Event with ID ${eventId} not found`);
+    }
+
+    return event.status;
+  }
+
+  async setStatus(eventId: string, status: EventStatus): Promise<Event> {
+    return this.prisma.event.update({
+      where: { id: eventId },
+      data: { status },
+    });
+  }
+
+  async findActiveLot(ticketTypeId: string) {
+    const now = new Date();
+
+    const lot = await this.prisma.ticketLot.findFirst({
+      where: {
+        ticketTypeId,
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: {
+        startDate: 'asc',
+      },
+    });
+
+    return lot;
   }
 }

@@ -76,15 +76,18 @@ model Coupon {
   id         String    @id @default(uuid()) @db.Uuid
   eventId    String    @db.Uuid
   createdBy  String    @db.Uuid
-  name       String
+  name       String     
   percentage Decimal
   quantity   Int
+  isActive   Boolean?
   deletedAt  DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
   user  User  @relation(fields: [createdBy], references: [id])
 
   tickets Ticket[]
+
+  @@index([deletedAt])
 }
 
 model Ticket {
@@ -105,6 +108,13 @@ model Ticket {
   coupon      Coupon      @relation(fields: [couponId], references: [id])
 
   personalizedFieldAnswers PersonalizedFieldAnswer[]
+  teamId    String?  @db.Uuid
+  team      Team?    @relation(fields: [teamId], references: [id])
+}
+
+model Team {
+  id      String   @id @default(uuid()) @db.Uuid
+  tickets Ticket[]
 }
 
 model Bracket {
@@ -121,8 +131,9 @@ model Category {
   id           String @id @default(uuid()) @db.Uuid
   ticketTypeId String @db.Uuid
   title        String
-  description  String
+  restriction Restriction @default(NONE)
   quantity     Int
+  deletedAt    DateTime?
 
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
 
@@ -134,9 +145,9 @@ model TicketType {
   eventId     String      @db.Uuid
   name        String
   description String
-  restriction Restriction @default(SAME_CATEGORY)
   userType    UserType    @default(ATHLETE)
   teamSize    Int         @default(1)
+  deletedAt   DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
 
@@ -151,6 +162,7 @@ model PersonalizedField {
   type         String
   requestTitle String
   optionsList  Json?
+  deletedAt    DateTime?
 
   ticketType TicketType                @relation(fields: [ticketTypeId], references: [id])
   answers    PersonalizedFieldAnswer[]
@@ -171,12 +183,14 @@ model TicketLot {
   ticketTypeId String   @db.Uuid
   name         String
   price        Decimal
-  quantity     Int
+  quantity     Int   @default(0)
+  soldQuantity Int   @default(0)
   startDate    DateTime
   endDate      DateTime
   isActive     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
 
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
   tickets    Ticket[]
@@ -189,6 +203,8 @@ model EventDashboardAccess {
 
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
+  
+  @@unique([userId, eventId])
 }
 
 model AddressEvent {

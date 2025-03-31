@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+import { UpsertTicketTypeDto } from './dto/upsert-ticket.dto';
 import { TicketTypeRepository } from './ticket-types.repository';
 
 @Injectable()
@@ -9,6 +10,10 @@ export class TicketTypeService {
 
   async create(createDto: CreateTicketTypeDto) {
     return this.ticketTypeRepository.createTicketType(createDto);
+  }
+
+  async bulkUpsert(dtos: UpsertTicketTypeDto[], eventId: string) {
+    return this.ticketTypeRepository.bulkUpsertTicket(dtos, eventId);
   }
 
   async findOne(id: string) {
