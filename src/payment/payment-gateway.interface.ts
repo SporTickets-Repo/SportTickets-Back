@@ -1,11 +1,6 @@
 export interface PaymentGateway {
-  processPayment(
-    paymentData: PaymentData,
-    totalValue: number,
-    transactionId: string,
-  ): Promise<any>;
+  processPayment(checkoutResult: any): Promise<any>;
 }
-
 export interface PaymentData {
   paymentMethodId: 'pix' | 'credit_card';
   email: string;
@@ -42,4 +37,5 @@ export interface PaymentData {
     ];
   };
   application_fee: number;
+  external_reference: string;
 }

@@ -6,15 +6,11 @@ import { PaymentData, PaymentGateway } from './payment-gateway.interface';
 export class PaymentService {
   constructor(private readonly mercadoPagoGateway: MercadoPagoGateway) {}
 
-  async processPayment(
-    paymentData: PaymentData,
-    totalValue: number,
-    transactionId: string,
-  ) {
+  async processPayment(checkoutResult: any) {
     let gateway: PaymentGateway;
 
     gateway = this.mercadoPagoGateway;
 
-    return gateway.processPayment(paymentData, totalValue, transactionId);
+    return gateway.processPayment(checkoutResult);
   }
 }
