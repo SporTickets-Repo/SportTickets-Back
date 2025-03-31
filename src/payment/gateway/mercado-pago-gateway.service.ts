@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
+import { CreateCheckoutDto } from 'src/checkout/dto/create-checkout.dto';
 import { AppConfigService } from 'src/config/config.service';
 import { PaymentData, PaymentGateway } from '../payment-gateway.interface';
 
@@ -11,13 +12,18 @@ export class MercadoPagoGateway implements PaymentGateway {
     private readonly configService: AppConfigService,
   ) {}
 
-  async processPayment(checkoutResult: any): Promise<any> {
-    const paymentData =
-      this.transformCheckoutResultToPaymentData(checkoutResult);
+  async processPayment(
+    checkoutResult: any,
+    createCheckoutDto: CreateCheckoutDto,
+  ): Promise<any> {
+    const paymentData = this.transformCheckoutResultToPaymentData(
+      checkoutResult,
+      createCheckoutDto,
+    );
     const transactionId = checkoutResult.id;
     const totalValue = Number(checkoutResult.totalValue);
 
-    if (paymentData.paymentMethodId === 'credit_card') {
+    if (paymentData.paymentMethodId == 'credit_card') {
       const cardTokenResponse = await lastValueFrom(
         this.httpService.post(
           'https://api.mercadopago.com/v1/card_tokens',
@@ -90,8 +96,6 @@ export class MercadoPagoGateway implements PaymentGateway {
         ),
       );
 
-      console.log('Payment response:', paymentResponse.data);
-
       return paymentResponse.data;
     } else {
       throw new BadRequestException('Unsupported payment method');
@@ -100,6 +104,7 @@ export class MercadoPagoGateway implements PaymentGateway {
 
   private transformCheckoutResultToPaymentData(
     checkoutResult: any,
+    createCheckoutDto: CreateCheckoutDto,
   ): PaymentData {
     const { createdBy, paymentMethod, tickets } = checkoutResult;
     const nameParts = createdBy.name.split(' ');
@@ -120,7 +125,7 @@ export class MercadoPagoGateway implements PaymentGateway {
 
     const paymentData: PaymentData = {
       external_reference: checkoutResult.id,
-      paymentMethodId: paymentMethod || 'pix',
+      paymentMethodId: paymentMethod.toLowerCase(),
       email: createdBy.email,
       payer: {
         email: createdBy.email,
@@ -138,12 +143,22 @@ export class MercadoPagoGateway implements PaymentGateway {
     };
 
     if (paymentData.paymentMethodId === 'credit_card') {
-      paymentData.cardNumber = '';
-      paymentData.securityCode = '';
-      paymentData.expirationMonth = 0;
-      paymentData.expirationYear = 0;
+      console.log('carddata', createCheckoutDto.paymentData.cardData);
+
+      paymentData.cardNumber =
+        createCheckoutDto.paymentData.cardData?.cardNumber;
+      paymentData.securityCode =
+        createCheckoutDto.paymentData.cardData?.securityCode;
+      paymentData.expirationMonth =
+        createCheckoutDto.paymentData.cardData?.expirationMonth;
+      paymentData.expirationYear =
+        createCheckoutDto.paymentData.cardData?.expirationYear;
       paymentData.cardHolder = {
-        name: createdBy.name,
+        name: createCheckoutDto.paymentData.cardData?.cardHolder.name as string,
+        identification: {
+          type: createdBy.documentType,
+          number: createdBy.document,
+        },
       };
       paymentData.installments = 1;
     }

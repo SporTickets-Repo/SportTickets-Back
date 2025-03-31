@@ -1,5 +1,10 @@
+import { CreateCheckoutDto } from 'src/checkout/dto/create-checkout.dto';
+
 export interface PaymentGateway {
-  processPayment(checkoutResult: any): Promise<any>;
+  processPayment(
+    checkoutResult: any,
+    createCheckoutDto: CreateCheckoutDto,
+  ): Promise<any>;
 }
 export interface PaymentData {
   paymentMethodId: 'pix' | 'credit_card';
@@ -10,6 +15,10 @@ export interface PaymentData {
   expirationYear?: number;
   cardHolder?: {
     name: string;
+    identification: {
+      type: string;
+      number: string;
+    };
   };
   payer: {
     email: string;

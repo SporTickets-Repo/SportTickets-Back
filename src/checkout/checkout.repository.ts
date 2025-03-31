@@ -21,6 +21,7 @@ export class CheckoutRepository {
           status: 'PENDING',
           totalValue: totalValue,
           createdById: user.id,
+          paymentMethod: dto.paymentData.paymentMethod,
         },
       });
 
@@ -111,6 +112,21 @@ export class CheckoutRepository {
       });
 
       return createdTransaction;
+    });
+  }
+
+  async updateCheckoutTransaction(transactionId: string, data: any) {
+    return this.prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        externalPaymentId: data?.id.toString(),
+        externalStatus: data?.status,
+        pixQRCode:
+          data?.point_of_interaction?.transaction_data?.qr_code || null,
+        pixQRCodeBase64:
+          data?.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+        response: data,
+      },
     });
   }
 }

@@ -17,12 +17,15 @@ export class CheckoutService {
       user,
     );
 
-    console.log('Checkout result:', checkoutResult);
+    const paymentResult = await this.paymentService.processPayment(
+      checkoutResult,
+      dto,
+    );
 
-    const paymentResult =
-      await this.paymentService.processPayment(checkoutResult);
-
-    console.log('Payment result:', paymentResult.data);
+    await this.checkoutRepository.updateCheckoutTransaction(
+      checkoutResult?.id as string,
+      paymentResult,
+    );
 
     return paymentResult;
   }
