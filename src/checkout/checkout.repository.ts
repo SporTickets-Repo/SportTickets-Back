@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
 
 @Injectable()
@@ -59,6 +60,22 @@ export class CheckoutRepository {
             }
           }
 
+          let code: string | undefined;
+          let isUnique = false;
+
+          while (!isUnique) {
+            const generated = generateRandomCode();
+
+            const existing = await tx.ticket.findUnique({
+              where: { code: generated },
+            });
+
+            if (!existing) {
+              code = generated;
+              isUnique = true;
+            }
+          }
+
           const ticket = await tx.ticket.create({
             data: {
               userId: player.userId,
@@ -67,6 +84,7 @@ export class CheckoutRepository {
               ticketLotId: lot.id,
               categoryId: player.categoryId,
               price: ticketPrice,
+              code: code!,
               ...(couponId && { couponId }),
             },
           });
