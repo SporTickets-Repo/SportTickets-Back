@@ -72,7 +72,6 @@ export class EventController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER)
   @Get('my-events')
   async getMyEvents(@Request() req: { user: User }) {
     return this.eventService.getUserEvents(req.user.id);
