@@ -4,6 +4,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateQrCodeBase64, generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
 
 @Injectable()
 export class CheckoutRepository {
@@ -137,18 +138,49 @@ export class CheckoutRepository {
     });
   }
 
-  async updateCheckoutTransaction(transactionId: string, data: any) {
+  async updateCheckoutTransaction(gatewayResponse: MercadoPagoPaymentResponse) {
     return this.prisma.transaction.update({
-      where: { id: transactionId },
+      where: { id: gatewayResponse.external_reference },
       data: {
-        externalPaymentId: data?.id.toString(),
-        externalStatus: data?.status,
-        status: mapStatus(data?.status),
+        externalPaymentId: gatewayResponse?.id.toString(),
+        externalStatus: gatewayResponse?.status,
+        status: mapStatus(gatewayResponse?.status),
         pixQRCode:
-          data?.point_of_interaction?.transaction_data?.qr_code || null,
+          gatewayResponse?.point_of_interaction?.transaction_data?.qr_code ||
+          null,
         pixQRCodeBase64:
-          data?.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-        response: data,
+          gatewayResponse?.point_of_interaction?.transaction_data
+            ?.qr_code_base64 || null,
+        response: JSON.parse(JSON.stringify(gatewayResponse)),
+      },
+    });
+  }
+
+  async getTransactionWithTicketsByPaymentId(transactionId: string) {
+    return this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        tickets: {
+          include: {
+            user: true,
+            ticketLot: {
+              include: {
+                ticketType: {
+                  include: {
+                    event: true,
+                    personalizedFields: true,
+                  },
+                },
+              },
+            },
+            category: true,
+            team: true,
+            coupon: true,
+            personalizedFieldAnswers: {
+              include: { personalizedField: true },
+            },
+          },
+        },
       },
     });
   }
