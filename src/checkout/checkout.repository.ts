@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { generateRandomCode } from 'src/utils/generate';
+import { generateQrCodeBase64, generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
 
 @Injectable()
@@ -61,6 +61,7 @@ export class CheckoutRepository {
           }
 
           let code: string | undefined;
+          let codeBase64: string | undefined;
           let isUnique = false;
 
           while (!isUnique) {
@@ -72,6 +73,7 @@ export class CheckoutRepository {
 
             if (!existing) {
               code = generated;
+              codeBase64 = await generateQrCodeBase64(generated);
               isUnique = true;
             }
           }
@@ -85,6 +87,7 @@ export class CheckoutRepository {
               categoryId: player.categoryId,
               price: ticketPrice,
               code: code!,
+              codeBase64: codeBase64!,
               ...(couponId && { couponId }),
             },
           });
