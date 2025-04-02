@@ -20,6 +20,7 @@ import { isUUID } from 'class-validator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UpdateEventFeeDto } from './dto/event-fee.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { GetEventByIdDto } from './dto/get-event-by-id.dto';
@@ -121,5 +122,18 @@ export class EventController {
     @Body() body: { status: EventStatus },
   ) {
     return this.eventService.setStatus(eventId, body.status);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MASTER)
+  @Put(':eventId/event-fee')
+  async updateEventFee(
+    @Param('eventId') eventId: string,
+    @Body() updateEventFeeDto: UpdateEventFeeDto,
+  ) {
+    return this.eventService.updateEventFee(
+      eventId,
+      updateEventFeeDto.eventFee,
+    );
   }
 }
