@@ -12,7 +12,6 @@ export class CheckoutRepository {
 
   async performCheckout(dto: CreateCheckoutDto, user: User) {
     const { teams, couponId } = dto;
-
     const now = new Date();
 
     return this.prisma.$transaction(async (tx) => {
@@ -105,9 +104,23 @@ export class CheckoutRepository {
         }
       }
 
+      let eventFeePercentage = new Decimal(0);
+      if (teams.length > 0) {
+        const ticketType = await tx.ticketType.findUnique({
+          where: { id: teams[0].ticketTypeId },
+          include: { event: true },
+        });
+        if (ticketType && ticketType.event && ticketType.event.eventFee) {
+          eventFeePercentage = new Decimal(ticketType.event.eventFee);
+        }
+      }
+
+      const feeValue = totalValue.mul(eventFeePercentage);
+      const finalTotal = totalValue.add(feeValue);
+
       await tx.transaction.update({
         where: { id: transaction.id },
-        data: { totalValue },
+        data: { totalValue: finalTotal },
       });
 
       const createdTransaction = await tx.transaction.findUnique({
