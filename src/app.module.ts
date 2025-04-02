@@ -15,6 +15,7 @@ import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
 import { PaymentModule } from './payment/payment.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { TicketModule } from './ticket/ticket.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TransactionModule } from './transaction/transaction.module';
     RankingModule,
     PaymentModule,
     TransactionModule,
+    TicketModule,
   ],
   controllers: [],
   providers: [PrismaService],
