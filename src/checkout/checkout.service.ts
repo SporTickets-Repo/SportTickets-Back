@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Transaction, User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
@@ -20,12 +20,25 @@ export class CheckoutService {
       user,
     );
 
+    if (!checkoutResult) {
+      throw new InternalServerErrorException(
+        'Erro ao criar a transação de checkout',
+      );
+    }
+
     const paymentResult = await this.paymentService.processPayment(
       checkoutResult,
       dto,
     );
 
-    return paymentResult;
+    if (!paymentResult) {
+      throw new InternalServerErrorException('Erro ao processar o pagamento');
+    }
+
+    return {
+      transactionId: checkoutResult.id,
+      message: 'Transaction created successfully',
+    };
   }
 
   async handleApprovedTransaction(transactionData: Transaction) {
