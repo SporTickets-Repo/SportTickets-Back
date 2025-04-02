@@ -65,7 +65,7 @@ export class MercadoPagoGateway implements PaymentGateway {
         external_reference: paymentData.external_reference,
         // application_fee: 10,
         notification_url:
-          'https://eee4-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/checkout/webhook',
+          'https://d976-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/payment/webhook',
       };
 
       let paymentResponse;
@@ -96,9 +96,10 @@ export class MercadoPagoGateway implements PaymentGateway {
         additional_info: paymentData.additional_info,
         description: `Pagamento do Evento Sportickets`,
         external_reference: transactionId,
+        statement_descriptor: `Sportickets`,
         // application_fee: 10,
         notification_url:
-          'https://eee4-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/checkout/webhook',
+          'https://d976-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/payment/webhook',
       };
 
       let paymentResponse;

@@ -86,4 +86,66 @@ export class EmailService {
 
     return this.sendMail(to, name, 'Recuperação de senha', htmlBody);
   }
+
+  async sendTicketConfirmation(ticket: any) {
+    const {
+      user,
+      ticketLot,
+      category,
+      team,
+      price,
+      codeBase64,
+      personalizedFieldAnswers,
+    } = ticket;
+
+    const ticketType = ticketLot.ticketType;
+    const event = ticketType.event;
+
+    let personalizedFieldsHtml = '';
+    if (personalizedFieldAnswers?.length > 0) {
+      personalizedFieldsHtml = `
+      <h4>Informações Personalizadas:</h4>
+      <ul>
+        ${personalizedFieldAnswers
+          .map(
+            (answer) =>
+              `<li><strong>${answer.personalizedField.requestTitle}:</strong> ${answer.answer}</li>`,
+          )
+          .join('')}
+      </ul>
+    `;
+    }
+
+    const htmlBody = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #9333ea;">Ingresso Confirmado - ${ticketType.name}</h2>
+      <p>Olá ${user.name},</p>
+      <p>Seu ingresso foi confirmado com sucesso para o evento <strong>${event.name}</strong>.</p>
+
+      <h4>Detalhes do Ingresso:</h4>
+      <ul>
+        <li><strong>Categoria:</strong> ${category.title}</li>
+        <li><strong>Lote:</strong> ${ticketLot.name}</li>
+        <li><strong>Preço:</strong> R$ ${price.toFixed(2)}</li>
+        ${team ? `<li><strong>Equipe:</strong> ${team.id}</li>` : ''}
+      </ul>
+
+      ${personalizedFieldsHtml}
+
+      <h4>QR Code do Ingresso:</h4>
+      <img src="${codeBase64}" alt="QR Code do ingresso" style="max-width: 200px;" />
+
+      <br /><br />
+      <p>Nos vemos no evento! 🎉</p>
+      <p>Atenciosamente,<br />Equipe SporTickets</p>
+    </div>
+  `;
+
+    await this.sendMail(
+      user.email,
+      user.name,
+      `Seu ingresso para ${event.name} foi confirmado!`,
+      htmlBody,
+    );
+  }
 }
