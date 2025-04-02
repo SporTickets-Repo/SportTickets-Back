@@ -8,8 +8,57 @@ export class TransactionRepository {
   async findById(id: string) {
     return this.prisma.transaction.findUnique({
       where: { id },
-      include: {
-        tickets: true,
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        status: true,
+        createdById: true,
+        paymentMethod: true,
+        externalPaymentId: true,
+        externalStatus: true,
+        pixQRCode: true,
+        response: false,
+        totalValue: true,
+        paymentProvider: true,
+        paidAt: true,
+        tickets: {
+          include: {
+            ticketLot: {
+              include: {
+                ticketType: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                sex: true,
+                phone: true,
+                profileImageUrl: true,
+                documentType: true,
+                document: true,
+                bornAt: true,
+              },
+            },
+            category: true,
+            personalizedFieldAnswers: {
+              select: {
+                id: true,
+                personalizedFieldId: true,
+                answer: true,
+                personalizedField: {
+                  select: {
+                    id: true,
+                    requestTitle: true,
+                  },
+                },
+              },
+            },
+            coupon: true,
+          },
+        },
       },
     });
   }
@@ -36,7 +85,20 @@ export class TransactionRepository {
           },
         },
       },
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        status: true,
+        createdById: true,
+        paymentMethod: true,
+        externalPaymentId: true,
+        externalStatus: true,
+        pixQRCode: true,
+        response: false,
+        totalValue: true,
+        paymentProvider: true,
+        paidAt: true,
         tickets: {
           include: {
             ticketLot: {
@@ -44,6 +106,34 @@ export class TransactionRepository {
                 ticketType: true,
               },
             },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                sex: true,
+                phone: true,
+                profileImageUrl: true,
+                documentType: true,
+                document: true,
+                bornAt: true,
+              },
+            },
+            category: true,
+            personalizedFieldAnswers: {
+              select: {
+                id: true,
+                personalizedFieldId: true,
+                answer: true,
+                personalizedField: {
+                  select: {
+                    id: true,
+                    requestTitle: true,
+                  },
+                },
+              },
+            },
+            coupon: true,
           },
         },
       },
