@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && prisma migrate deploy && nest build",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "migrate:up": "npx prisma migrate deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.779.0",
