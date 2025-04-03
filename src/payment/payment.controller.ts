@@ -1,22 +1,25 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
 import { TransactionStatus } from '@prisma/client';
 import { CheckoutService } from 'src/checkout/checkout.service';
 import { MercadoPagoPaymentResponse } from 'src/checkout/dto/mercado-pago-payment-response';
 
 @Controller('payment')
 export class PaymentController {
+  private readonly logger = new Logger(PaymentController.name);
   constructor(private readonly checkoutService: CheckoutService) {}
 
   @Post('webhook')
   @HttpCode(200)
   async handleWebhook(@Body() body: any) {
-    console.log('Webhook recebido', body);
+    this.logger.log('Webhook received from Mercado Pago', body);
 
     const paymentId = body?.data?.id;
     const type = body?.type;
 
     if (type !== 'payment' || !paymentId) {
-      console.warn('Webhook ignorado. Tipo inválido ou ID ausente.');
+      this.logger.warn(
+        `Webhook received with invalid type or without payment ID: ${type} ${paymentId}`,
+      );
       return { message: 'Ignored' };
     }
 
@@ -33,7 +36,10 @@ export class PaymentController {
       );
 
       if (!response.ok) {
-        throw new Error(`Erro ao consultar pagamento: ${response.statusText}`);
+        this.logger.error(
+          `Error fetching payment from Mercado Pago: ${response.status} ${response.statusText}`,
+        );
+        return { message: 'Error fetching payment' };
       }
 
       const paymentData: MercadoPagoPaymentResponse = await response.json();
@@ -49,8 +55,11 @@ export class PaymentController {
 
       return { message: 'OK' };
     } catch (error) {
-      console.error('Erro ao processar webhook do Mercado Pago:', error);
-      return { message: 'Erro interno ao processar webhook' };
+      this.logger.error(
+        `Error processing webhook: ${error.message}`,
+        error.stack,
+      );
+      return { message: 'Internal error processing webhook' };
     }
   }
 }
