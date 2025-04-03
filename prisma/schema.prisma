@@ -52,6 +52,7 @@ model Event {
   endDate        DateTime?
   startDate      DateTime?
   address        AddressEvent?
+  eventFee       Decimal?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

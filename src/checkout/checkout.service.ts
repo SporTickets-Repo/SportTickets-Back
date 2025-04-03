@@ -20,6 +20,8 @@ export class CheckoutService {
       user,
     );
 
+    console.log('checkoutResult', checkoutResult);
+
     if (!checkoutResult) {
       throw new InternalServerErrorException(
         'Erro ao criar a transação de checkout',

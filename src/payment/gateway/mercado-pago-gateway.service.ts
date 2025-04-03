@@ -148,6 +148,26 @@ export class MercadoPagoGateway implements PaymentGateway {
       warranty: false,
     }));
 
+    const ticketTotal = tickets.reduce((acc: number, ticket: any) => {
+      return acc + Number(ticket.price);
+    }, 0);
+
+    const eventFee = tickets[0]?.ticketLot?.ticketType?.event?.eventFee;
+    if (eventFee && Number(eventFee) > 0) {
+      const feeValue = ticketTotal * Number(eventFee);
+      items.push({
+        id: 'eventFee',
+        title: 'Taxa do Evento',
+        description: 'Taxa do Evento',
+        category_id: 'event-fee',
+        quantity: 1,
+        unit_price: feeValue,
+        type: 'fee',
+        event_date: null,
+        warranty: false,
+      });
+    }
+
     const paymentData: PaymentData = {
       external_reference: checkoutResult.id,
       paymentMethodId: paymentMethod.toLowerCase(),
@@ -165,7 +185,6 @@ export class MercadoPagoGateway implements PaymentGateway {
       additional_info: {
         items: items,
       },
-      // application_fee: 10,
     };
 
     if (paymentData.paymentMethodId === 'credit_card') {
