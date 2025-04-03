@@ -11,4 +11,9 @@ export class TicketController {
   async getMyTickets(@Request() req) {
     return this.ticketService.getMyTickets(req.user.id);
   }
+
+  @Get('all')
+  async getAllTickets(@Request() req) {
+    return this.ticketService.getAllTickets(req.user.id);
+  }
 }
