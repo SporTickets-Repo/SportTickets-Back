@@ -180,14 +180,26 @@ export class CheckoutRepository {
               include: {
                 ticketType: {
                   include: {
-                    event: true,
+                    event: {
+                      include: {
+                        address: true,
+                      },
+                    },
                     personalizedFields: true,
                   },
                 },
               },
             },
             category: true,
-            team: true,
+            team: {
+              include: {
+                tickets: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
             coupon: true,
             personalizedFieldAnswers: {
               include: { personalizedField: true },

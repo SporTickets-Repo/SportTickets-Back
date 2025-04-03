@@ -7,6 +7,8 @@ import { PaymentData, PaymentGateway } from '../payment-gateway.interface';
 
 @Injectable()
 export class MercadoPagoGateway implements PaymentGateway {
+  private readonly baseUrl = 'https://api.mercadopago.com/v1';
+
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: AppConfigService,
@@ -22,108 +24,134 @@ export class MercadoPagoGateway implements PaymentGateway {
     );
     const transactionId = checkoutResult.id;
     const totalValue = Number(checkoutResult.totalValue);
+    const notificationUrl = `${this.configService.backendUrl}/payment/webhook`;
 
-    if (paymentData.paymentMethodId === 'credit_card') {
-      let cardTokenResponse;
-      try {
-        cardTokenResponse = await lastValueFrom(
-          this.httpService.post(
-            'https://api.mercadopago.com/v1/card_tokens',
-            {
-              card_number: paymentData.cardNumber,
-              security_code: paymentData.securityCode,
-              expiration_month: paymentData.expirationMonth,
-              expiration_year: (paymentData.expirationYear as number) + 2000,
-              cardholder: paymentData.cardHolder,
-            },
-            {
-              headers: {
-                'X-Idempotency-Key': transactionId,
-                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
-              },
-            },
-          ),
+    switch (paymentData.paymentMethodId) {
+      case 'credit_card':
+        return this.processCreditCardPayment(
+          paymentData,
+          transactionId,
+          totalValue,
+          notificationUrl,
         );
-      } catch (error: any) {
-        throw new BadRequestException(
-          `Erro ao criar token do cartão: ${error.response?.data?.message || error.message}`,
+      case 'pix':
+        return this.processPixPayment(
+          paymentData,
+          transactionId,
+          totalValue,
+          notificationUrl,
         );
-      }
+      default:
+        throw new BadRequestException('Método de pagamento não suportado.');
+    }
+  }
 
-      const cardToken = cardTokenResponse.data.id;
+  private getHeaders(transactionId: string): Record<string, string> {
+    return {
+      'X-Idempotency-Key': transactionId,
+      Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
+    };
+  }
+
+  private async createCardToken(
+    paymentData: PaymentData,
+    transactionId: string,
+  ): Promise<string> {
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/card_tokens`,
+          {
+            card_number: paymentData.cardNumber,
+            security_code: paymentData.securityCode,
+            expiration_month: paymentData.expirationMonth,
+            expiration_year: (paymentData.expirationYear as number) + 2000,
+            cardholder: paymentData.cardHolder,
+          },
+          { headers: this.getHeaders(transactionId) },
+        ),
+      );
+      const cardToken = response.data.id;
       if (!cardToken) {
-        throw new BadRequestException('Unable to create card token.');
-      }
-
-      const paymentPayload = {
-        transaction_amount: totalValue,
-        token: cardToken,
-        installments: paymentData.installments,
-        payer: paymentData.payer,
-        additional_info: paymentData.additional_info,
-        description: `Pagamento do Evento Sportickets`,
-        external_reference: paymentData.external_reference,
-        // application_fee: 10,
-        notification_url:
-          'https://d976-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/payment/webhook',
-      };
-
-      let paymentResponse;
-      try {
-        paymentResponse = await lastValueFrom(
-          this.httpService.post(
-            'https://api.mercadopago.com/v1/payments',
-            paymentPayload,
-            {
-              headers: {
-                'X-Idempotency-Key': transactionId,
-                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
-              },
-            },
-          ),
-        );
-      } catch (error: any) {
         throw new BadRequestException(
-          `Erro ao processar pagamento com cartão: ${error.response?.data?.message || error.message}`,
+          'Não foi possível criar o token do cartão.',
         );
       }
-      return paymentResponse.data;
-    } else if (paymentData.paymentMethodId === 'pix') {
-      const paymentPayload = {
-        transaction_amount: totalValue,
-        payment_method_id: paymentData.paymentMethodId,
-        payer: paymentData.payer,
-        additional_info: paymentData.additional_info,
-        description: `Pagamento do Evento Sportickets`,
-        external_reference: transactionId,
-        statement_descriptor: `Sportickets`,
-        // application_fee: 10,
-        notification_url:
-          'https://d976-2804-1b2-1140-4a6a-d982-a140-e977-54ba.ngrok-free.app/payment/webhook',
-      };
+      return cardToken;
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Erro ao criar token do cartão: ${
+          error.response?.data?.message || error.message
+        }`,
+      );
+    }
+  }
 
-      let paymentResponse;
-      try {
-        paymentResponse = await lastValueFrom(
-          this.httpService.post(
-            'https://api.mercadopago.com/v1/payments',
-            paymentPayload,
-            {
-              headers: {
-                'X-Idempotency-Key': transactionId,
-                Authorization: `Bearer ${this.configService.mercadoPagoToken}`,
-              },
-            },
-          ),
-        );
-      } catch (error: any) {
-        throw new BadRequestException(
-          `Erro ao processar pagamento com PIX: ${error.response?.data?.message || error.message}`,
-        );
-      }
-      return paymentResponse.data;
-    } else {
-      throw new BadRequestException('Unsupported payment method');
+  private async processCreditCardPayment(
+    paymentData: PaymentData,
+    transactionId: string,
+    totalValue: number,
+    notificationUrl: string,
+  ): Promise<any> {
+    const cardToken = await this.createCardToken(paymentData, transactionId);
+
+    const payload = {
+      transaction_amount: totalValue,
+      token: cardToken,
+      installments: paymentData.installments,
+      payer: paymentData.payer,
+      additional_info: paymentData.additional_info,
+      description: 'Pagamento do Evento Sportickets',
+      external_reference: paymentData.external_reference,
+      notification_url: notificationUrl,
+    };
+
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(`${this.baseUrl}/payments`, payload, {
+          headers: this.getHeaders(transactionId),
+        }),
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Erro ao processar pagamento com cartão: ${
+          error.response?.data?.message || error.message
+        }`,
+      );
+    }
+  }
+
+  private async processPixPayment(
+    paymentData: PaymentData,
+    transactionId: string,
+    totalValue: number,
+    notificationUrl: string,
+  ): Promise<any> {
+    const payload = {
+      transaction_amount: totalValue,
+      payment_method_id: paymentData.paymentMethodId,
+      payer: paymentData.payer,
+      additional_info: paymentData.additional_info,
+      description: 'Pagamento do Evento Sportickets',
+      external_reference: transactionId,
+      statement_descriptor: 'Sportickets',
+      notification_url: notificationUrl,
+    };
+
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(`${this.baseUrl}/payments`, payload, {
+          headers: this.getHeaders(transactionId),
+        }),
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Erro ao processar pagamento com PIX: ${
+          error.response?.data?.message || error.message
+        }`,
+      );
     }
   }
 
@@ -132,9 +160,6 @@ export class MercadoPagoGateway implements PaymentGateway {
     createCheckoutDto: CreateCheckoutDto,
   ): PaymentData {
     const { createdBy, paymentMethod, tickets } = checkoutResult;
-    const nameParts = createdBy.name.split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ');
 
     const items = tickets.map((ticket: any) => ({
       id: ticket.id,
@@ -148,17 +173,18 @@ export class MercadoPagoGateway implements PaymentGateway {
       warranty: false,
     }));
 
-    const ticketTotal = tickets.reduce((acc: number, ticket: any) => {
-      return acc + Number(ticket.price);
-    }, 0);
+    const ticketTotal = tickets.reduce(
+      (acc: number, ticket: any) => acc + Number(ticket.price),
+      0,
+    );
 
     const eventFee = tickets[0]?.ticketLot?.ticketType?.event?.eventFee;
     if (eventFee && Number(eventFee) > 0) {
       const feeValue = ticketTotal * Number(eventFee);
       items.push({
         id: 'eventFee',
-        title: 'Taxa do Evento',
-        description: 'Taxa do Evento',
+        title: `Taxa do Evento ${tickets[0]?.ticketLot?.ticketType?.event?.name}`,
+        description: `Taxa de manutenção da plataforma e para o evento`,
         category_id: 'event-fee',
         quantity: 1,
         unit_price: feeValue,
@@ -182,24 +208,17 @@ export class MercadoPagoGateway implements PaymentGateway {
           number: createdBy.document,
         },
       },
-      additional_info: {
-        items: items,
-      },
+      additional_info: { items },
     };
 
     if (paymentData.paymentMethodId === 'credit_card') {
-      console.log('carddata', createCheckoutDto.paymentData.cardData);
-
-      paymentData.cardNumber =
-        createCheckoutDto.paymentData.cardData?.cardNumber;
-      paymentData.securityCode =
-        createCheckoutDto.paymentData.cardData?.securityCode;
-      paymentData.expirationMonth =
-        createCheckoutDto.paymentData.cardData?.expirationMonth;
-      paymentData.expirationYear =
-        createCheckoutDto.paymentData.cardData?.expirationYear;
+      const cardData = createCheckoutDto.paymentData.cardData;
+      paymentData.cardNumber = cardData?.cardNumber;
+      paymentData.securityCode = cardData?.securityCode;
+      paymentData.expirationMonth = cardData?.expirationMonth;
+      paymentData.expirationYear = cardData?.expirationYear;
       paymentData.cardHolder = {
-        name: createCheckoutDto.paymentData.cardData?.cardHolder.name as string,
+        name: cardData?.cardHolder.name as string,
         identification: {
           type: createdBy.documentType,
           number: createdBy.document,

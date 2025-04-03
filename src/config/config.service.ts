@@ -40,4 +40,8 @@ export class AppConfigService {
   get mercadoPagoToken(): string {
     return this.configService.get<string>('MP_ACCESS_TOKEN') || '';
   }
+
+  get backendUrl(): string {
+    return this.configService.get<string>('BACKEND_URL') || '';
+  }
 }

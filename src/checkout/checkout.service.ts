@@ -5,6 +5,7 @@ import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
+import { TicketWithRelations } from './dto/ticket-with-relations.dto';
 
 @Injectable()
 export class CheckoutService {
@@ -19,8 +20,6 @@ export class CheckoutService {
       dto,
       user,
     );
-
-    console.log('checkoutResult', checkoutResult);
 
     if (!checkoutResult) {
       throw new InternalServerErrorException(
@@ -53,7 +52,7 @@ export class CheckoutService {
       throw new Error('Transação não encontrada');
     }
 
-    for (const ticket of transaction.tickets) {
+    for (const ticket of transaction.tickets as TicketWithRelations[]) {
       await this.emailService.sendTicketConfirmation(ticket);
     }
   }
