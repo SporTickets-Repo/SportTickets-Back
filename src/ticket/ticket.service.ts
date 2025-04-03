@@ -8,4 +8,8 @@ export class TicketService {
   async getMyTickets(userId: string) {
     return this.ticketRepository.findTicketsByUser(userId);
   }
+
+  async getAllTickets(userId: string) {
+    return this.ticketRepository.findAllTickets(userId);
+  }
 }
