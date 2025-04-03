@@ -16,6 +16,76 @@ export class CheckoutService {
   ) {}
 
   async createOrder(dto: CreateCheckoutDto, user: User) {
+    const ticketTypeCounts = new Map<string, number>();
+    const categoryCounts = new Map<string, number>();
+    let couponCount = dto.couponId ? 0 : null;
+
+    for (const team of dto.teams) {
+      const playerCount = team.player.length;
+
+      ticketTypeCounts.set(
+        team.ticketTypeId,
+        (ticketTypeCounts.get(team.ticketTypeId) || 0) + playerCount,
+      );
+
+      for (const player of team.player) {
+        categoryCounts.set(
+          player.categoryId,
+          (categoryCounts.get(player.categoryId) || 0) + 1,
+        );
+      }
+
+      if (dto.couponId) {
+        couponCount! += playerCount;
+      }
+    }
+
+    const lots = await this.checkoutRepository.findLotsByTicketTypeIds([
+      ...ticketTypeCounts.keys(),
+    ]);
+
+    for (const lot of lots) {
+      const requested = ticketTypeCounts.get(lot.ticketTypeId)!;
+      const available = lot.quantity - lot.soldQuantity;
+
+      if (requested > available) {
+        throw new InternalServerErrorException(
+          `The lot "${lot.name}" does not have enough tickets available.`,
+        );
+      }
+    }
+
+    const categories = await this.checkoutRepository.findCategoriesByIds([
+      ...categoryCounts.keys(),
+    ]);
+
+    for (const category of categories) {
+      const requested = categoryCounts.get(category.id)!;
+      const available = category.quantity - category.soldQuantity;
+
+      if (requested > available) {
+        throw new InternalServerErrorException(
+          `The category "${category.title}" does not have enough tickets available.`,
+        );
+      }
+    }
+
+    if (dto.couponId) {
+      const coupon = await this.checkoutRepository.findCouponById(dto.couponId);
+
+      if (!coupon || coupon.deletedAt || !coupon.isActive) {
+        throw new InternalServerErrorException(`Invalid or inactive coupon.`);
+      }
+
+      const available = coupon.quantity - coupon.soldQuantity;
+
+      if (couponCount! > available) {
+        throw new InternalServerErrorException(
+          `The coupon "${coupon.name}" has already been used up to the allowed limit.`,
+        );
+      }
+    }
+
     const checkoutResult = await this.checkoutRepository.performCheckout(
       dto,
       user,
@@ -23,7 +93,7 @@ export class CheckoutService {
 
     if (!checkoutResult) {
       throw new InternalServerErrorException(
-        'Erro ao criar a transação de checkout',
+        'Error creating the checkout transaction.',
       );
     }
 
@@ -33,12 +103,12 @@ export class CheckoutService {
     );
 
     if (!paymentResult) {
-      throw new InternalServerErrorException('Erro ao processar o pagamento');
+      throw new InternalServerErrorException('Error processing the payment.');
     }
 
     return {
       transactionId: checkoutResult.id,
-      message: 'Transaction created successfully',
+      message: 'Transaction created successfully.',
     };
   }
 
@@ -49,11 +119,16 @@ export class CheckoutService {
       );
 
     if (!transaction) {
-      throw new Error('Transação não encontrada');
+      throw new Error('Transaction not found.');
     }
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
-      await this.emailService.sendTicketConfirmation(ticket);
+      if (!ticket.deliveredAt) {
+        await this.emailService.sendTicketConfirmation(ticket);
+        await this.checkoutRepository.markTicketAsDeliveredAndUpdateSoldQuantity(
+          ticket.id,
+        );
+      }
     }
   }
 

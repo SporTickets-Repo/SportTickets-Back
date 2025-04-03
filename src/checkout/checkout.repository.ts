@@ -209,6 +209,96 @@ export class CheckoutRepository {
       },
     });
   }
+
+  async markTicketAsDeliveredAndUpdateSoldQuantity(ticketId: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: {
+        id: true,
+        ticketLotId: true,
+        categoryId: true,
+        couponId: true,
+      },
+    });
+
+    if (!ticket) {
+      throw new BadRequestException('Ticket not found.');
+    }
+
+    return this.prisma.$transaction([
+      this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { deliveredAt: new Date() },
+      }),
+
+      this.prisma.ticketLot.update({
+        where: { id: ticket.ticketLotId },
+        data: {
+          soldQuantity: { increment: 1 },
+        },
+      }),
+
+      this.prisma.category.update({
+        where: { id: ticket.categoryId },
+        data: {
+          soldQuantity: { increment: 1 },
+        },
+      }),
+
+      ...(ticket.couponId
+        ? [
+            this.prisma.coupon.update({
+              where: { id: ticket.couponId },
+              data: {
+                soldQuantity: { increment: 1 },
+              },
+            }),
+          ]
+        : []),
+    ]);
+  }
+
+  findLotsByTicketTypeIds(ids: string[]) {
+    return this.prisma.ticketLot.findMany({
+      where: {
+        ticketTypeId: { in: ids },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        ticketTypeId: true,
+        quantity: true,
+        soldQuantity: true,
+      },
+    });
+  }
+
+  findCategoriesByIds(ids: string[]) {
+    return this.prisma.category.findMany({
+      where: { id: { in: ids }, deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        quantity: true,
+        soldQuantity: true,
+      },
+    });
+  }
+
+  findCouponById(id: string) {
+    return this.prisma.coupon.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        quantity: true,
+        soldQuantity: true,
+        isActive: true,
+        deletedAt: true,
+      },
+    });
+  }
 }
 
 function mapStatus(externalStatus: string): TransactionStatus {
