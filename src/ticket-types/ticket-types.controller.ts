@@ -10,8 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { Role } from '@prisma/client';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
@@ -21,7 +19,6 @@ import { TicketTypeService } from './ticket-types.service';
 
 @Controller('ticket-types')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN, Role.PARTNER)
 export class TicketTypeController {
   constructor(private readonly ticketTypeService: TicketTypeService) {}
 

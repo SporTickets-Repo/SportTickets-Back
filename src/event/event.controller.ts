@@ -35,7 +35,6 @@ export class EventController {
   constructor(private readonly eventService: EventService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'banner', maxCount: 1 },

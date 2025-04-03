@@ -53,7 +53,6 @@ export class RankingController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER)
   @Put('list/:id')
   async updateRankingList(
     @Param('id') eventId: string,

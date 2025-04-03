@@ -11,8 +11,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { Role, User } from '@prisma/client';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CouponService } from './coupon.service';
@@ -35,7 +34,6 @@ export class CouponController {
   }
 
   @Put('list/:id')
-  @Roles(Role.PARTNER, Role.ADMIN)
   async updateCouponsList(
     @Param('id') eventId: string,
     @Body() payload: UpdateCouponsListWrapperDto,

@@ -56,7 +56,6 @@ export class BracketController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.PARTNER)
   @Put('list/:id')
   async updateBracketList(
     @Param('id') eventId: string,
