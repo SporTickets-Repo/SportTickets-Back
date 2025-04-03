@@ -89,14 +89,15 @@ model Transaction {
 }
 
 model Coupon {
-  id         String    @id @default(uuid()) @db.Uuid
-  eventId    String    @db.Uuid
-  createdBy  String    @db.Uuid
-  name       String
-  percentage Decimal
-  quantity   Int
-  isActive   Boolean?
-  deletedAt  DateTime?
+  id           String    @id @default(uuid()) @db.Uuid
+  eventId      String    @db.Uuid
+  createdBy    String    @db.Uuid
+  name         String
+  percentage   Decimal
+  quantity     Int
+  soldQuantity Int       @default(0)
+  isActive     Boolean?
+  deletedAt    DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
   user  User  @relation(fields: [createdBy], references: [id])
@@ -161,6 +162,7 @@ model Category {
   title        String
   restriction  Restriction @default(NONE)
   quantity     Int
+  soldQuantity Int         @default(0)
   deletedAt    DateTime?
 
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
