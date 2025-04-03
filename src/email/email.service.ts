@@ -378,10 +378,6 @@ export class EmailService {
             <td style="padding: 8px 0; width: 40%; color: #666;">Código do Ingresso:</td>
             <td style="padding: 8px 0; font-weight: 500; font-family: monospace; font-size: 16px;">${code}</td>
           </tr>
-          <tr>
-            <td style="padding: 8px 0; width: 40%; color: #666;">Data do Evento:</td>
-            <td style="padding: 8px 0; font-weight: 500;">${formattedStartDate} - ${formattedEndDate}</td>
-          </tr>
         </table>
       </div>
 
@@ -614,10 +610,6 @@ export class EmailService {
         <div class="detail-row">
           <div class="detail-label">Código do Ingresso:</div>
           <div class="detail-value" style="font-family: monospace; font-size: 16px;">${code}</div>
-        </div>
-        <div class="detail-row">
-          <div class="detail-label">Data do Evento:</div>
-          <div class="detail-value">${formattedStartDate} - ${formattedEndDate}</div>
         </div>
       </div>
       
