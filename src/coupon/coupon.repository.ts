@@ -27,14 +27,20 @@ export class CouponRepository {
   }
 
   async findValidCoupon(name: string, eventId: string) {
-    return this.prisma.coupon.findFirst({
+    const coupon = await this.prisma.coupon.findFirst({
       where: {
         name,
         eventId,
         deletedAt: null,
-        quantity: { gt: 0 },
+        isActive: true,
       },
     });
+
+    if (!coupon) return null;
+
+    if (coupon.soldQuantity >= coupon.quantity) return null;
+
+    return coupon;
   }
 
   async findCouponByNameAndEvent(name: string, eventId: string) {

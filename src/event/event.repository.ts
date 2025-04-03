@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AddressEvent, Event, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { EventWithRelations } from './dto/event-with-relations.dto';
 import { FilterEventsDto } from './dto/filter-events.dto';
 
 @Injectable()
@@ -116,9 +117,10 @@ export class EventRepository {
     });
   }
 
-  async findEventBySlug(slug: string): Promise<Event | null> {
+  async findEventBySlug(slug: string): Promise<EventWithRelations | null> {
     const now = new Date();
-    const event = this.prisma.event.findUnique({
+
+    const event = await this.prisma.event.findUnique({
       where: { slug },
       include: {
         ticketTypes: {
@@ -145,13 +147,27 @@ export class EventRepository {
       },
     });
 
-    return event;
+    if (!event) return null;
+
+    const filteredTicketTypes = event.ticketTypes.map((tt) => ({
+      ...tt,
+      ticketLots: tt.ticketLots.filter(
+        (lot) => lot.soldQuantity < lot.quantity,
+      ),
+      categories: tt.categories.filter(
+        (cat) => cat.soldQuantity < cat.quantity,
+      ),
+    }));
+
+    return {
+      ...event,
+      ticketTypes: filteredTicketTypes,
+    };
   }
 
   async findFilteredEvents(filters: FilterEventsDto): Promise<Event[]> {
     const { name, startDate, minPrice, maxPrice, type } = filters;
 
-    // Construção do objeto "where"
     const where: Prisma.EventWhereInput = {};
     where.status = {
       in: [
@@ -161,7 +177,6 @@ export class EventRepository {
       ],
     };
 
-    // 1) Filtro por título (pesquisa parcial "contains", case insensitive)
     if (name) {
       where.name = {
         contains: name,
@@ -169,7 +184,6 @@ export class EventRepository {
       };
     }
 
-    // 2) Filtro de data (startDate)
     if (startDate) {
       const startOfDay = new Date(startDate);
       startOfDay.setHours(0, 0, 0, 0);
@@ -183,7 +197,6 @@ export class EventRepository {
       };
     }
 
-    // 3) Filtro por faixa de preço (ticketTypes -> ticketLots)
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.ticketTypes = {
         some: {
@@ -199,7 +212,6 @@ export class EventRepository {
       };
     }
 
-    // 4) Filtro por tipo de evento
     if (type) {
       where.type = type;
     }
