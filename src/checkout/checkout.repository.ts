@@ -1,15 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { generateQrCodeBase64, generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
 
 @Injectable()
 export class CheckoutRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async performCheckout(dto: CreateCheckoutDto) {
+  async performCheckout(dto: CreateCheckoutDto, user: User) {
     const { teams, couponId } = dto;
-
     const now = new Date();
 
     return this.prisma.$transaction(async (tx) => {
@@ -19,6 +21,8 @@ export class CheckoutRepository {
         data: {
           status: 'PENDING',
           totalValue: totalValue,
+          createdById: user.id,
+          paymentMethod: dto.paymentData.paymentMethod,
         },
       });
 
@@ -32,6 +36,7 @@ export class CheckoutRepository {
               isActive: true,
               startDate: { lte: now },
               endDate: { gte: now },
+              deletedAt: null,
             },
             orderBy: { startDate: 'asc' },
           });
@@ -55,6 +60,24 @@ export class CheckoutRepository {
             }
           }
 
+          let code: string | undefined;
+          let codeBase64: string | undefined;
+          let isUnique = false;
+
+          while (!isUnique) {
+            const generated = generateRandomCode();
+
+            const existing = await tx.ticket.findUnique({
+              where: { code: generated },
+            });
+
+            if (!existing) {
+              code = generated;
+              codeBase64 = await generateQrCodeBase64(generated);
+              isUnique = true;
+            }
+          }
+
           const ticket = await tx.ticket.create({
             data: {
               userId: player.userId,
@@ -63,6 +86,8 @@ export class CheckoutRepository {
               ticketLotId: lot.id,
               categoryId: player.categoryId,
               price: ticketPrice,
+              code: code!,
+              codeBase64: codeBase64!,
               ...(couponId && { couponId }),
             },
           });
@@ -79,15 +104,134 @@ export class CheckoutRepository {
         }
       }
 
+      let eventFeePercentage = new Decimal(0);
+      if (teams.length > 0) {
+        const ticketType = await tx.ticketType.findUnique({
+          where: { id: teams[0].ticketTypeId },
+          include: { event: true },
+        });
+        if (ticketType && ticketType.event && ticketType.event.eventFee) {
+          eventFeePercentage = new Decimal(ticketType.event.eventFee);
+        }
+      }
+
+      const feeValue = totalValue.mul(eventFeePercentage);
+      const finalTotal = totalValue.add(feeValue);
+
       await tx.transaction.update({
         where: { id: transaction.id },
-        data: { totalValue },
+        data: { totalValue: finalTotal },
       });
 
-      return {
-        transactionId: transaction.id,
-        total: totalValue.toFixed(2),
-      };
+      const createdTransaction = await tx.transaction.findUnique({
+        where: { id: transaction.id },
+        include: {
+          createdBy: true,
+          tickets: {
+            include: {
+              ticketLot: {
+                include: {
+                  ticketType: true,
+                },
+              },
+              personalizedFieldAnswers: {
+                include: {
+                  personalizedField: true,
+                },
+              },
+              user: true,
+              category: true,
+              coupon: true,
+            },
+          },
+        },
+      });
+
+      return createdTransaction;
     });
+  }
+
+  async updateCheckoutTransaction(gatewayResponse: MercadoPagoPaymentResponse) {
+    return this.prisma.transaction.update({
+      where: { id: gatewayResponse.external_reference },
+      data: {
+        externalPaymentId: gatewayResponse?.id.toString(),
+        externalStatus: gatewayResponse?.status,
+        status: mapStatus(gatewayResponse?.status),
+        pixQRCode:
+          gatewayResponse?.point_of_interaction?.transaction_data?.qr_code ||
+          null,
+        pixQRCodeBase64:
+          gatewayResponse?.point_of_interaction?.transaction_data
+            ?.qr_code_base64 || null,
+        response: JSON.parse(JSON.stringify(gatewayResponse)),
+      },
+    });
+  }
+
+  async getTransactionWithTicketsByPaymentId(transactionId: string) {
+    return this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        tickets: {
+          include: {
+            user: true,
+            ticketLot: {
+              include: {
+                ticketType: {
+                  include: {
+                    event: {
+                      include: {
+                        address: true,
+                      },
+                    },
+                    personalizedFields: true,
+                  },
+                },
+              },
+            },
+            category: true,
+            team: {
+              include: {
+                tickets: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+            coupon: true,
+            personalizedFieldAnswers: {
+              include: { personalizedField: true },
+            },
+          },
+        },
+      },
+    });
+  }
+}
+
+function mapStatus(externalStatus: string): TransactionStatus {
+  switch (externalStatus) {
+    case 'pending':
+      return TransactionStatus.PENDING;
+    case 'approved':
+      return TransactionStatus.APPROVED;
+    case 'authorized':
+      return TransactionStatus.AUTHORIZED;
+    case 'in_process':
+      return TransactionStatus.IN_PROCESS;
+    case 'in_mediation':
+      return TransactionStatus.IN_MEDIATION;
+    case 'rejected':
+      return TransactionStatus.REJECTED;
+    case 'cancelled':
+      return TransactionStatus.CANCELLED;
+    case 'refunded':
+      return TransactionStatus.REFUNDED;
+    case 'charged_back':
+      return TransactionStatus.CHARGED_BACK;
+    default:
+      return TransactionStatus.PENDING;
   }
 }

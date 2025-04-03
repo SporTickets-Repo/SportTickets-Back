@@ -13,6 +13,9 @@ import { RankingModule } from './ranking/ranking.module';
 import { TicketLotModule } from './ticket-lot/ticket-lot.module';
 import { TicketTypeModule } from './ticket-types/ticket-types.module';
 import { UserModule } from './user/user.module';
+import { PaymentModule } from './payment/payment.module';
+import { TransactionModule } from './transaction/transaction.module';
+import { TicketModule } from './ticket/ticket.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { UserModule } from './user/user.module';
     CouponModule,
     CheckoutModule,
     RankingModule,
+    PaymentModule,
+    TransactionModule,
+    TicketModule,
   ],
   controllers: [],
   providers: [PrismaService],

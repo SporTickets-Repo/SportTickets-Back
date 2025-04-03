@@ -32,15 +32,16 @@ model User {
 
   eventDashboardAccess EventDashboardAccess[]
   Coupon               Coupon[]
+  transactions         Transaction[]
 }
 
 model Event {
-  id             String      @id @default(uuid()) @db.Uuid
-  createdBy      String      @db.Uuid
-  slug           String?      @unique
-  status         EventStatus @default(DRAFT)
-  type           EventType   @default(GENERAL)
-  level          EventLevel  @default(GENERAL)
+  id             String        @id @default(uuid()) @db.Uuid
+  createdBy      String        @db.Uuid
+  slug           String?       @unique
+  status         EventStatus   @default(DRAFT)
+  type           EventType     @default(GENERAL)
+  level          EventLevel    @default(GENERAL)
   name           String?
   place          String?
   description    String?
@@ -50,38 +51,53 @@ model Event {
   smallImageUrl  String?
   endDate        DateTime?
   startDate      DateTime?
-  address AddressEvent? 
+  address        AddressEvent?
+  eventFee       Decimal?
 
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [createdBy], references: [id])
 
-  paymentMethods PaymentMethod[]
-  ticketTypes TicketType[]
-  coupons     Coupon[]
+  paymentMethods       PaymentMethod[]
+  ticketTypes          TicketType[]
+  coupons              Coupon[]
   eventDashboardAccess EventDashboardAccess[]
-  bracket Bracket[]
-  ranking Ranking[]
+  bracket              Bracket[]
+  ranking              Ranking[]
 }
 
 model Transaction {
-  id         String            @id @default(uuid()) @db.Uuid
-  status     TransactionStatus @default(PENDING)
-  totalValue Decimal
+  id          String            @id @default(uuid()) @db.Uuid
+  status      TransactionStatus @default(PENDING)
+  totalValue  Decimal
+  createdById String            @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-  tickets Ticket[]
+  paymentMethod     String?
+  externalPaymentId String?
+  externalStatus    String?
+  paymentProvider   PaymentProvider?
+  paidAt            DateTime?
+  pixQRCode         String?
+  pixQRCodeBase64   String?
+  response          Json?
+
+  tickets   Ticket[]
+  createdBy User     @relation(fields: [createdById], references: [id])
 }
 
 model Coupon {
-  id         String    @id @default(uuid()) @db.Uuid
-  eventId    String    @db.Uuid
-  createdBy  String    @db.Uuid
-  name       String     
-  percentage Decimal
-  quantity   Int
-  isActive   Boolean?
-  deletedAt  DateTime?
+  id           String    @id @default(uuid()) @db.Uuid
+  eventId      String    @db.Uuid
+  createdBy    String    @db.Uuid
+  name         String
+  percentage   Decimal
+  quantity     Int
+  soldQuantity Int       @default(0)
+  isActive     Boolean?
+  deletedAt    DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
   user  User  @relation(fields: [createdBy], references: [id])
@@ -97,10 +113,12 @@ model Ticket {
   transactionId String   @db.Uuid
   ticketLotId   String   @db.Uuid
   categoryId    String   @db.Uuid
-  couponId      String?   @db.Uuid
+  couponId      String?  @db.Uuid
   price         Decimal
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  code          String?  @unique
+  codeBase64    String?  @unique
 
   user        User        @relation(fields: [userId], references: [id])
   transaction Transaction @relation(fields: [transactionId], references: [id])
@@ -109,8 +127,8 @@ model Ticket {
   coupon      Coupon?     @relation(fields: [couponId], references: [id])
 
   personalizedFieldAnswers PersonalizedFieldAnswer[]
-  teamId    String?  @db.Uuid
-  team      Team?    @relation(fields: [teamId], references: [id])
+  teamId                   String?                   @db.Uuid
+  team                     Team?                     @relation(fields: [teamId], references: [id])
 }
 
 model Team {
@@ -129,9 +147,9 @@ model Bracket {
 }
 
 model Ranking {
-  id       String @id @default(uuid()) @db.Uuid
-  eventId  String @db.Uuid
-  name     String 
+  id       String  @id @default(uuid()) @db.Uuid
+  eventId  String  @db.Uuid
+  name     String
   url      String
   isActive Boolean
 
@@ -139,11 +157,12 @@ model Ranking {
 }
 
 model Category {
-  id           String @id @default(uuid()) @db.Uuid
-  ticketTypeId String @db.Uuid
+  id           String      @id @default(uuid()) @db.Uuid
+  ticketTypeId String      @db.Uuid
   title        String
-  restriction Restriction @default(NONE)
+  restriction  Restriction @default(NONE)
   quantity     Int
+  soldQuantity Int         @default(0)
   deletedAt    DateTime?
 
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
@@ -152,12 +171,12 @@ model Category {
 }
 
 model TicketType {
-  id          String      @id @default(uuid()) @db.Uuid
-  eventId     String      @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  eventId     String    @db.Uuid
   name        String
   description String
-  userType    UserType    @default(ATHLETE)
-  teamSize    Int         @default(1)
+  userType    UserType  @default(ATHLETE)
+  teamSize    Int       @default(1)
   deletedAt   DateTime?
 
   event Event @relation(fields: [eventId], references: [id])
@@ -168,8 +187,8 @@ model TicketType {
 }
 
 model PersonalizedField {
-  id           String @id @default(uuid()) @db.Uuid
-  ticketTypeId String @db.Uuid
+  id           String    @id @default(uuid()) @db.Uuid
+  ticketTypeId String    @db.Uuid
   type         String
   requestTitle String
   optionsList  Json?
@@ -190,17 +209,17 @@ model PersonalizedFieldAnswer {
 }
 
 model TicketLot {
-  id           String   @id @default(uuid()) @db.Uuid
-  ticketTypeId String   @db.Uuid
+  id           String    @id @default(uuid()) @db.Uuid
+  ticketTypeId String    @db.Uuid
   name         String
   price        Decimal
-  quantity     Int   @default(0)
-  soldQuantity Int   @default(0)
+  quantity     Int       @default(0)
+  soldQuantity Int       @default(0)
   startDate    DateTime
   endDate      DateTime
-  isActive     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
@@ -214,13 +233,13 @@ model EventDashboardAccess {
 
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
-  
+
   @@unique([userId, eventId])
 }
 
 model AddressEvent {
-  id           String @id @default(uuid()) @db.Uuid
-  eventId      String @unique @db.Uuid
+  id           String  @id @default(uuid()) @db.Uuid
+  eventId      String  @unique @db.Uuid
   zipCode      String
   street       String?
   complement   String?
@@ -228,7 +247,7 @@ model AddressEvent {
   neighborhood String?
   city         String?
   state        String?
-  event Event @relation(fields: [eventId], references: [id])
+  event        Event   @relation(fields: [eventId], references: [id])
 }
 
 enum Role {
@@ -276,9 +295,14 @@ enum EventLevel {
 
 enum TransactionStatus {
   PENDING
-  PAID
+  APPROVED
+  AUTHORIZED
+  IN_PROCESS
+  IN_MEDIATION
+  REJECTED
   CANCELLED
   REFUNDED
+  CHARGED_BACK
 }
 
 enum Restriction {
@@ -295,4 +319,10 @@ enum PaymentMethod {
   PIX
   CREDIT_CARD
   BOLETO
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  MERCADOPAGO
 }

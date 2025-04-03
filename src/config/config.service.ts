@@ -5,8 +5,20 @@ import { ConfigService } from '@nestjs/config';
 export class AppConfigService {
   constructor(private configService: ConfigService) {}
 
-  get blobToken(): string {
-    return this.configService.get<string>('BLOB_READ_WRITE_TOKEN') || '';
+  get nodeEnv(): string {
+    return this.configService.get<string>('NODE_ENV') || 'development teste';
+  }
+
+  get s3Bucket(): string {
+    return this.configService.get<string>('S3_BUCKET')!;
+  }
+
+  get s3AccessKeyId(): string {
+    return this.configService.get<string>('S3_ACCESS_KEY_ID')!;
+  }
+
+  get s3SecretAccessKey(): string {
+    return this.configService.get<string>('S3_SECRET_ACCESS_KEY')!;
   }
 
   get redisUrl(): string {
@@ -35,5 +47,13 @@ export class AppConfigService {
 
   get frontendUrl(): string {
     return this.configService.get<string>('FRONTEND_URL') || '';
+  }
+
+  get mercadoPagoToken(): string {
+    return this.configService.get<string>('MP_ACCESS_TOKEN') || '';
+  }
+
+  get backendUrl(): string {
+    return this.configService.get<string>('BACKEND_URL') || '';
   }
 }

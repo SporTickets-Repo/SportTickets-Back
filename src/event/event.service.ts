@@ -215,4 +215,16 @@ export class EventService {
 
     return this.eventRepository.setStatus(eventId, status);
   }
+
+  async updateEventFee(eventId: string, eventFee: number) {
+    const event = await this.eventRepository.findEventById(eventId);
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const updatedEvent = await this.eventRepository.updateEvent(eventId, {
+      eventFee,
+    });
+    return updatedEvent;
+  }
 }

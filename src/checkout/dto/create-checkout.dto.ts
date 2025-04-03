@@ -1,6 +1,8 @@
+import { PaymentMethod } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -73,6 +75,7 @@ class CardDataDto {
   installments: number;
 
   @IsString()
+  @IsOptional()
   cardBrand: string;
 
   @ValidateNested()
@@ -81,8 +84,8 @@ class CardDataDto {
 }
 
 class PaymentDataDto {
-  @IsString()
-  paymentMethod: string;
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
 
   @IsOptional()
   @ValidateNested()

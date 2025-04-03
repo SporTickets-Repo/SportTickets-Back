@@ -83,7 +83,15 @@ export class EventRepository {
   async findUserEvents(userId: string): Promise<Event[]> {
     return this.prisma.event.findMany({
       where: {
-        createdBy: userId,
+        OR: [
+          { createdBy: userId },
+          {
+            eventDashboardAccess: {
+              some: { userId },
+            },
+          },
+        ],
+
         status: { not: EventStatus.CANCELLED },
       },
       include: {
