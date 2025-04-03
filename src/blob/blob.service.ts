@@ -56,8 +56,14 @@ export class BlobService {
       throw new BadRequestException('User ID is required.');
     }
 
-    const sanitizedFileName = fileName.replace(/[\r\n]+/g, '').trim();
+    const sanitizedFileName = fileName
+      .replace(/[\r\n]+/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+
     const key = `${this.nodeEnv === 'development' ? 'dev/' : ''}${userId}/${sanitizedFileName}`;
+
+    const url = `https://${this.bucket}.s3.amazonaws.com/${encodeURIComponent(key)}`;
 
     try {
       await this.s3.send(
@@ -70,8 +76,6 @@ export class BlobService {
           ACL: 'public-read',
         }),
       );
-
-      const url = `https://${this.bucket}.s3.amazonaws.com/${key}`;
 
       return { fileName: sanitizedFileName, url };
     } catch (err) {
@@ -183,18 +187,16 @@ export class BlobService {
 
     return { message: 'All files have been successfully deleted' };
   }
-
   private getKeyFromUrl(url: string): string {
     try {
       const parsedUrl = new URL(url);
-      const host = parsedUrl.hostname;
       const pathname = parsedUrl.pathname;
-
-      if (!host.includes('amazonaws.com')) {
+      if (!parsedUrl.hostname.includes('amazonaws.com')) {
         throw new Error('Not an S3 URL');
       }
-
-      return pathname.startsWith('/') ? pathname.slice(1) : pathname;
+      return decodeURIComponent(
+        pathname.startsWith('/') ? pathname.slice(1) : pathname,
+      );
     } catch {
       throw new BadRequestException('Invalid file URL.');
     }
