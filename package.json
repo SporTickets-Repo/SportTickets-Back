@@ -22,7 +22,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && nest build",
     "prisma:generate": "prisma generate",
     "migrate:up": "npx prisma migrate deploy",
-    "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
+    "heroku-postbuild": "npm run build && mkdir  ./.cache && mv /app/.cache/puppeteer ./.cache"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.779.0",
