@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { TransactionStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class TicketRepository {
         userId,
         transaction: {
           status: {
-            in: ['PENDING'],
+            in: [TransactionStatus.APPROVED],
           },
         },
       },
@@ -103,7 +104,7 @@ export class TicketRepository {
         },
         transaction: {
           status: {
-            in: ['PENDING'],
+            in: [TransactionStatus.APPROVED],
           },
         },
       },
