@@ -49,7 +49,7 @@ export class PaymentController {
 
       if (updatedTransaction.status === TransactionStatus.APPROVED) {
         await this.checkoutService.handleApprovedTransaction(
-          updatedTransaction,
+          updatedTransaction.id,
         );
       }
 

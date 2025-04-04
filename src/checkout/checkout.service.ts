@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Transaction, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
@@ -112,10 +112,10 @@ export class CheckoutService {
     };
   }
 
-  async handleApprovedTransaction(transactionData: Transaction) {
+  async handleApprovedTransaction(transactionId: string) {
     const transaction =
       await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
-        transactionData.id,
+        transactionId,
       );
 
     if (!transaction) {
