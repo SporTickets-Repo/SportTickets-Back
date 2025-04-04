@@ -18,16 +18,14 @@ export class TransactionService {
     const tx = await this.transactionRepository.findById(id);
 
     if (!tx) throw new NotFoundException('Transaction not found');
-    if (tx.createdById !== userId)
+    if (tx.createdById !== userId) {
       throw new ForbiddenException('Access denied');
+    }
 
     if (tx.status === TransactionStatus.APPROVED) {
-      const undeliveredTickets = tx.tickets.some(
-        (ticket) => ticket.deliveredAt === null,
-      );
-
-      if (undeliveredTickets) {
-        this.checkoutService.handleApprovedTransaction(tx.id);
+      const undelivered = tx.tickets?.some((t) => !t.deliveredAt);
+      if (undelivered) {
+        await this.checkoutService.handleApprovedTransaction(tx.id);
       }
     }
 
