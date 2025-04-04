@@ -10,14 +10,6 @@ export function generateRandomCode(length = 5): string {
   return result;
 }
 
-export async function generateQrCodeBase64(text: string): Promise<string> {
-  return await QRCode.toDataURL(text, {
-    errorCorrectionLevel: 'H',
-    type: 'image/png',
-    width: 300,
-  });
-}
-
 export async function generatePdf(html: string): Promise<Buffer> {
   const browser = await puppeteer.launch({
     headless: true,
@@ -31,6 +23,10 @@ export async function generatePdf(html: string): Promise<Buffer> {
     printBackground: true,
   });
   await browser.close();
-  const pdfBuffer = Buffer.from(pdfUint8Array);
-  return pdfBuffer;
+  return Buffer.from(pdfUint8Array);
+}
+
+export async function generateQrCodeBase64(content: string): Promise<string> {
+  const dataUrl = await QRCode.toDataURL(content);
+  return dataUrl;
 }

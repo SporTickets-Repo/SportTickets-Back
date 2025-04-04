@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { TicketWithRelations } from 'src/checkout/dto/ticket-with-relations.dto';
 import { AppConfigService } from 'src/config/config.service';
 import { formatDate } from 'src/utils/format';
-import { generatePdf } from 'src/utils/generate';
+import { generatePdf, generateQrCodeBase64 } from 'src/utils/generate';
 import { SendMailClient } from 'zeptomail';
 
 @Injectable()
@@ -229,7 +229,6 @@ export class EmailService {
       team,
       price,
       code,
-      codeBase64,
       personalizedFieldAnswers,
     } = ticket;
 
@@ -487,18 +486,13 @@ export class EmailService {
     </div>
     `;
 
-    const qrCodeData =
-      codeBase64 && codeBase64.startsWith('data:image')
-        ? codeBase64
-        : codeBase64
-          ? `data:image/png;base64,${codeBase64}`
-          : '';
+    const qrCodeDataUrl = await generateQrCodeBase64(code as string);
 
-    const qrCodePdfHtml = codeBase64
-      ? `<div style="text-align: center; margin: 20px 0;">
-          <img src="${qrCodeData}" alt="QR Code do ingresso" style="max-width: 300px; width:300px; height:auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;" />
-        </div>`
-      : '';
+    const qrCodePdfHtml = `
+  <div style="text-align: center; margin: 20px 0;">
+    <img src="${qrCodeDataUrl}" alt="QR Code do ingresso" style="max-width: 300px; width:300px; height:auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;" />
+  </div>
+`;
 
     const pdfHtml = `
     <!DOCTYPE html>

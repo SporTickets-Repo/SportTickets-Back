@@ -22,7 +22,6 @@ export class TicketRepository {
         code: true,
         createdAt: true,
         updatedAt: true,
-        codeBase64: true,
         transaction: {
           select: {
             id: true,
