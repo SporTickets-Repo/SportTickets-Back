@@ -7,7 +7,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://beta.sportickets.com.br'],
+    origin: [
+      'http://localhost:3000',
+      'https://beta.sportickets.com.br',
+      'https://spor-tickets-front.vercel.app',
+    ],
     credentials: true,
   });
 
