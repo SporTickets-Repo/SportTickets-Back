@@ -1,2 +1,2 @@
 release: ./release.sh
-web: npm run start:prod
+web: bin/start-pgbouncer-stunnel npm run start:prod
