@@ -34,7 +34,16 @@ export class DashboardRepository {
       }),
     );
 
-    const addOps = toAdd.map((userId) =>
+    const validUsers = await this.prisma.user.findMany({
+      where: {
+        id: { in: toAdd },
+      },
+      select: { id: true },
+    });
+
+    const validUserIds = validUsers.map((user) => user.id);
+
+    const addOps = validUserIds.map((userId) =>
       this.prisma.eventDashboardAccess.create({
         data: {
           userId,
