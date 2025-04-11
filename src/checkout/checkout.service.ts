@@ -4,6 +4,7 @@ import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { CreateFreeCheckoutDto } from './dto/create-free-checkout.dto';
 import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
 import { TicketWithRelations } from './dto/ticket-with-relations.dto';
 
@@ -109,6 +110,61 @@ export class CheckoutService {
     return {
       transactionId: checkoutResult.id,
       message: 'Transaction created successfully.',
+    };
+  }
+
+  async createFreeOrder(dto: CreateFreeCheckoutDto, user: User) {
+    const { team } = dto;
+
+    const playerCount = team.player.length;
+    const categoryCounts = new Map<string, number>();
+
+    team.player.forEach((p) =>
+      categoryCounts.set(
+        p.categoryId,
+        (categoryCounts.get(p.categoryId) || 0) + 1,
+      ),
+    );
+
+    const [lot] = await this.checkoutRepository.findLotsByTicketTypeIds([
+      team.ticketTypeId,
+    ]);
+
+    if (!lot || playerCount > lot.quantity - lot.soldQuantity) {
+      throw new InternalServerErrorException(
+        `The lot "${lot?.name ?? ''}" does not have enough tickets available.`,
+      );
+    }
+
+    const categories = await this.checkoutRepository.findCategoriesByIds([
+      ...categoryCounts.keys(),
+    ]);
+
+    categories.forEach((c) => {
+      const requested = categoryCounts.get(c.id)!;
+      if (requested > c.quantity - c.soldQuantity) {
+        throw new InternalServerErrorException(
+          `The category "${c.title}" does not have enough tickets available.`,
+        );
+      }
+    });
+
+    const checkout = await this.checkoutRepository.performFreeCheckout(
+      team,
+      user,
+    );
+
+    if (!checkout) {
+      throw new InternalServerErrorException(
+        'Error creating the free checkout transaction.',
+      );
+    }
+
+    await this.handleApprovedTransaction(checkout.id);
+
+    return {
+      transactionId: checkout.id,
+      message: 'Free checkout completed successfully.',
     };
   }
 

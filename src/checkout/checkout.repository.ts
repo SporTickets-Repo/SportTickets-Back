@@ -4,6 +4,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { TeamDto } from './dto/create-free-checkout.dto';
 import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
 
 @Injectable()
@@ -145,6 +146,71 @@ export class CheckoutRepository {
       });
 
       return createdTransaction;
+    });
+  }
+
+  async performFreeCheckout(team: TeamDto, user: User) {
+    const now = new Date();
+
+    return this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.create({
+        data: {
+          status: TransactionStatus.APPROVED,
+          totalValue: new Decimal(0),
+          createdById: user.id,
+          paymentMethod: 'FREE',
+          externalStatus: 'free',
+        },
+      });
+
+      const teamCreated = await tx.team.create({ data: {} });
+
+      for (const player of team.player) {
+        const lot = await tx.ticketLot.findFirst({
+          where: {
+            ticketTypeId: team.ticketTypeId,
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+            deletedAt: null,
+          },
+          orderBy: { startDate: 'asc' },
+        });
+
+        if (!lot) {
+          throw new BadRequestException(
+            'Nenhum lote ativo disponível para este tipo de ingresso.',
+          );
+        }
+
+        /* gera código único */
+        let code: string;
+        do {
+          code = generateRandomCode();
+        } while (await tx.ticket.findUnique({ where: { code } }));
+
+        const ticket = await tx.ticket.create({
+          data: {
+            userId: player.userId,
+            transactionId: transaction.id,
+            teamId: teamCreated.id,
+            ticketLotId: lot.id,
+            categoryId: player.categoryId,
+            price: new Decimal(0),
+            code,
+          },
+        });
+
+        await tx.personalizedFieldAnswer.createMany({
+          data: player.personalFields.map((f) => ({
+            ticketId: ticket.id,
+            personalizedFieldId: f.personalizedFieldId,
+            answer: f.answer,
+          })),
+        });
+      }
+
+      return transaction;
     });
   }
 
