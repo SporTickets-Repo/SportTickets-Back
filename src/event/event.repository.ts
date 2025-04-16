@@ -269,6 +269,7 @@ export class EventRepository {
         smallImageUrl: null,
         startDate: null,
         endDate: null,
+        eventFee: 0.1,
       },
     });
   }
