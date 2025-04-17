@@ -281,6 +281,7 @@ enum EventType {
   FUTSAL
   VOLEI
   GENERAL
+  CORRIDA
 }
 
 enum EventLevel {
