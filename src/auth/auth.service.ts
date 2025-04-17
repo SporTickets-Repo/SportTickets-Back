@@ -190,6 +190,11 @@ export class AuthService {
 
   async checkEmail(email: string) {
     const user = await this.authRepository.findUserByEmail(email);
+
+    if (user && (!user.password || user.password.length === 0)) {
+      throw new ConflictException('Account created by another user');
+    }
+
     return !!user;
   }
 }
