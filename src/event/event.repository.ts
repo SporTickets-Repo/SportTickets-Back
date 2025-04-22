@@ -124,6 +124,7 @@ export class EventRepository {
       where: { slug },
       include: {
         ticketTypes: {
+          where: { deletedAt: null },
           include: {
             ticketLots: {
               where: {
