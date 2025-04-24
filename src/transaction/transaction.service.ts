@@ -18,7 +18,7 @@ export class TransactionService {
     const tx = await this.transactionRepository.findById(id);
 
     if (!tx) throw new NotFoundException('Transaction not found');
-    if (tx.createdById !== user.id || user.role !== Role.MASTER) {
+    if (tx.createdById !== user.id && user.role !== Role.MASTER) {
       throw new ForbiddenException('Access denied');
     }
 
