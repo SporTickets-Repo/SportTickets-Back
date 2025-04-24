@@ -6,6 +6,7 @@ import { BracketModule } from './bracket/bracket.module';
 import { CategoryModule } from './category/category.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { CouponModule } from './coupon/coupon.module';
+import { CronJobsModule } from './cron-job/cron-job.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EventModule } from './event/event.module';
 import { PaymentModule } from './payment/payment.module';
@@ -38,6 +39,7 @@ import { UserModule } from './user/user.module';
     TransactionModule,
     TicketModule,
     ScheduleModule.forRoot(),
+    CronJobsModule,
   ],
   controllers: [],
   providers: [PrismaService],

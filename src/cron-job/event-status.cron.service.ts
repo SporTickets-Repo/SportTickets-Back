@@ -9,7 +9,7 @@ export class EventStatusCronService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @Cron(CronExpression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_2_HOURS)
   async handleCron() {
     this.logger.log('🎯 Cron job EXECUTOU');
     const now = new Date();
