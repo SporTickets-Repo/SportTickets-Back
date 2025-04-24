@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { TransactionStatus } from '@prisma/client';
+import { Role, TransactionStatus, User } from '@prisma/client';
 import { CheckoutService } from 'src/checkout/checkout.service';
 import { TransactionRepository } from './transaction.repository';
 
@@ -14,11 +14,11 @@ export class TransactionService {
     private readonly checkoutService: CheckoutService,
   ) {}
 
-  async getTransactionById(id: string, userId: string) {
+  async getTransactionById(id: string, user: User) {
     const tx = await this.transactionRepository.findById(id);
 
     if (!tx) throw new NotFoundException('Transaction not found');
-    if (tx.createdById !== userId) {
+    if (tx.createdById !== user.id || user.role !== Role.MASTER) {
       throw new ForbiddenException('Access denied');
     }
 
