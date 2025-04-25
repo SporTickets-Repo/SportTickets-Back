@@ -142,30 +142,8 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const {
-      id,
-      email,
-      phone,
-      name,
-      profileImageUrl,
-      sex,
-      document,
-      documentType,
-      cep,
-      fantasyName,
-    } = user;
-    return {
-      userId: id,
-      email,
-      phone,
-      name,
-      profileImageUrl,
-      sex,
-      document,
-      documentType,
-      cep,
-      fantasyName,
-    };
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   async registerUser(registerUserDto: RegisterUserDto) {

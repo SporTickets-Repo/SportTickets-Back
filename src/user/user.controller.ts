@@ -114,7 +114,7 @@ export class UserController {
 
   @Roles(Role.ADMIN, Role.MASTER)
   @Get('by-id/:id')
-  async getUserByEmailAndId(@Param('id') id: string) {
+  async getUserById(@Param('id') id: string) {
     return this.userService.getUserById(id);
   }
 
