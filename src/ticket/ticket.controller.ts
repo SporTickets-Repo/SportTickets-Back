@@ -15,6 +15,12 @@ export class TicketController {
     return this.ticketService.getMyTickets(req.user.id);
   }
 
+  @Roles(Role.MASTER)
+  @Get('my-tickets-master/:userId')
+  async getMyTicketsMaster(@Param('userId') userId: string) {
+    return this.ticketService.getMyTicketsMaster(userId);
+  }
+
   @Get('all')
   async getAllTickets(@Request() req: { user: User }) {
     return this.ticketService.getAllTickets(req.user.id);
