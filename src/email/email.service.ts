@@ -133,7 +133,7 @@ export class EmailService {
     } catch (error) {
       this.logger.error(`Error sending email to ${to}`);
       this.logger.error(error);
-      throw error;
+      return null;
     }
   }
 
