@@ -188,6 +188,20 @@ export class CheckoutService {
     }
   }
 
+  async handleRefundedTransaction(transactionId: string) {
+    const transaction =
+      await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
+        transactionId,
+      );
+    if (!transaction) throw new Error('Transaction not found.');
+
+    for (const ticket of transaction.tickets as TicketWithRelations[]) {
+      await this.checkoutRepository.decreaseSoldQuantity(ticket.id);
+
+      await this.emailService.sendTicketRefund(ticket);
+    }
+  }
+
   async updatePaymentStatus(gatewayResponse: MercadoPagoPaymentResponse) {
     return await this.checkoutRepository.updateCheckoutTransaction(
       gatewayResponse,

@@ -24,7 +24,7 @@ export class MercadoPagoGateway implements PaymentGateway {
     );
     const transactionId = checkoutResult.id;
     const totalValue = Number(checkoutResult.totalValue);
-    const notificationUrl = `${this.configService.backendUrl}/payment/webhook`;
+    const notificationUrl = `${this.configService.backendUrl}/payment/webhook/mercado-pago`;
 
     switch (paymentData.paymentMethodId) {
       case 'credit_card':

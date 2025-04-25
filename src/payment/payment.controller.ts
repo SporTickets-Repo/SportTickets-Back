@@ -8,7 +8,7 @@ export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
   constructor(private readonly checkoutService: CheckoutService) {}
 
-  @Post('webhook')
+  @Post('webhook/mercado-pago')
   @HttpCode(200)
   async handleWebhook(@Body() body: any) {
     this.logger.log('Webhook received from Mercado Pago', body);
@@ -47,12 +47,25 @@ export class PaymentController {
       const updatedTransaction =
         await this.checkoutService.updatePaymentStatus(paymentData);
 
-      if (updatedTransaction.status === TransactionStatus.APPROVED) {
-        await this.checkoutService.handleApprovedTransaction(
-          updatedTransaction.id,
-        );
-      }
+      switch (updatedTransaction.status) {
+        case TransactionStatus.APPROVED:
+          await this.checkoutService.handleApprovedTransaction(
+            updatedTransaction.id,
+          );
+          break;
 
+        case TransactionStatus.AUTHORIZED:
+          await this.checkoutService.handleApprovedTransaction(
+            updatedTransaction.id,
+          );
+          break;
+
+        case TransactionStatus.REFUNDED:
+          await this.checkoutService.handleRefundedTransaction(
+            updatedTransaction.id,
+          );
+          break;
+      }
       return { message: 'OK' };
     } catch (error) {
       this.logger.error(

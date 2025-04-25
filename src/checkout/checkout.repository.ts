@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { TransactionStatus, User } from '@prisma/client';
+import { Prisma, TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateRandomCode } from 'src/utils/generate';
@@ -214,18 +214,32 @@ export class CheckoutRepository {
     });
   }
 
-  async updateCheckoutTransaction(gatewayResponse: MercadoPagoPaymentResponse) {
+  async updateCheckoutTransaction(gateway: MercadoPagoPaymentResponse) {
+    const status = mapStatus(gateway.status);
+
+    const data: Prisma.TransactionUpdateInput = {
+      externalPaymentId: gateway.id.toString(),
+      externalStatus: gateway.status,
+      status,
+      pixQRCode:
+        gateway.point_of_interaction?.transaction_data?.qr_code ?? null,
+      response: JSON.parse(JSON.stringify(gateway)),
+    };
+
+    if (
+      status === TransactionStatus.APPROVED ||
+      status === TransactionStatus.AUTHORIZED
+    ) {
+      data.paidAt = data.paidAt ?? new Date();
+    }
+
+    if (status === TransactionStatus.REFUNDED) {
+      data.refundedAt = data.refundedAt ?? new Date();
+    }
+
     return this.prisma.transaction.update({
-      where: { id: gatewayResponse.external_reference },
-      data: {
-        externalPaymentId: gatewayResponse?.id.toString(),
-        externalStatus: gatewayResponse?.status,
-        status: mapStatus(gatewayResponse?.status),
-        pixQRCode:
-          gatewayResponse?.point_of_interaction?.transaction_data?.qr_code ||
-          null,
-        response: JSON.parse(JSON.stringify(gatewayResponse)),
-      },
+      where: { id: gateway.external_reference },
+      data,
     });
   }
 
@@ -312,6 +326,37 @@ export class CheckoutRepository {
               data: {
                 soldQuantity: { increment: 1 },
               },
+            }),
+          ]
+        : []),
+    ]);
+  }
+
+  async decreaseSoldQuantity(ticketId: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: {
+        ticketLotId: true,
+        categoryId: true,
+        couponId: true,
+      },
+    });
+    if (!ticket) throw new BadRequestException('Ticket not found.');
+
+    return this.prisma.$transaction([
+      this.prisma.ticketLot.update({
+        where: { id: ticket.ticketLotId },
+        data: { soldQuantity: { increment: -1 } },
+      }),
+      this.prisma.category.update({
+        where: { id: ticket.categoryId },
+        data: { soldQuantity: { increment: -1 } },
+      }),
+      ...(ticket.couponId
+        ? [
+            this.prisma.coupon.update({
+              where: { id: ticket.couponId },
+              data: { soldQuantity: { increment: -1 } },
             }),
           ]
         : []),
