@@ -9,7 +9,15 @@ export class TicketService {
     return this.ticketRepository.findTicketsByUser(userId);
   }
 
+  async getMyTicketsMaster(userId: string) {
+    return this.ticketRepository.findTicketsByUser(userId);
+  }
+
   async getAllTickets(userId: string) {
+    return this.ticketRepository.findAllTickets(userId);
+  }
+
+  async getAllTicketsMaster(userId: string) {
     return this.ticketRepository.findAllTickets(userId);
   }
 }

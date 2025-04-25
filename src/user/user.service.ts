@@ -137,6 +137,15 @@ export class UserService {
     return { userId: id, email: userEmail, phone, name, profileImageUrl, sex };
   }
 
+  async getUserById(userId: string) {
+    const user = await this.userRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
   async registerUser(registerUserDto: RegisterUserDto) {
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([

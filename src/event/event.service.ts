@@ -172,6 +172,10 @@ export class EventService {
     return this.eventRepository.findUserEvents(userId);
   }
 
+  async getAllMasterEvents(userId: string) {
+    return this.eventRepository.findUserEvents(userId);
+  }
+
   async getEventBySlug(slug: string) {
     const event = await this.eventRepository.findEventBySlug(slug);
     if (!event) {
