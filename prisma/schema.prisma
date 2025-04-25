@@ -81,6 +81,7 @@ model Transaction {
   externalStatus    String?
   paymentProvider   PaymentProvider?
   paidAt            DateTime?
+  refundedAt        DateTime?
   pixQRCode         String?
   response          Json?
 
