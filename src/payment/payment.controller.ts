@@ -1,78 +1,121 @@
-import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpCode,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  Post,
+} from '@nestjs/common';
 import { TransactionStatus } from '@prisma/client';
 import { CheckoutService } from 'src/checkout/checkout.service';
-import { MercadoPagoPaymentResponse } from 'src/checkout/dto/mercado-pago-payment-response';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Controller('payment')
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
-  constructor(private readonly checkoutService: CheckoutService) {}
+
+  constructor(
+    private readonly checkoutService: CheckoutService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   @Post('webhook/mercado-pago')
   @HttpCode(200)
   async handleWebhook(@Body() body: any) {
-    this.logger.log('Webhook received from Mercado Pago', body);
-
     const paymentId = body?.data?.id;
     const type = body?.type;
 
-    if (type !== 'payment' || !paymentId) {
+    if (!paymentId || type !== 'payment') {
       this.logger.warn(
-        `Webhook received with invalid type or without payment ID: ${type} ${paymentId}`,
+        `Ignored invalid webhook | Type: ${type}, Payment ID: ${paymentId}`,
       );
-      return { message: 'Ignored' };
+      throw new BadRequestException('Invalid webhook payload.');
     }
 
-    try {
-      const response = await fetch(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+    this.logger.log(
+      `Processing webhook | Payment ID: ${paymentId} | Type: ${type}`,
+    );
 
-      if (!response.ok) {
-        this.logger.error(
-          `Error fetching payment from Mercado Pago: ${response.status} ${response.statusText}`,
-        );
-        return { message: 'Error fetching payment' };
+    try {
+      const paymentData =
+        await this.paymentService.fetchMercadoPagoPayment(paymentId);
+
+      if (!paymentData) {
+        this.logger.error(`Payment data not found | Payment ID: ${paymentId}`);
+        throw new NotFoundException('Payment data not found.');
       }
 
-      const paymentData: MercadoPagoPaymentResponse = await response.json();
+      this.logger.log(
+        `Payment fetched | Payment ID: ${paymentData.id} | Status: ${paymentData.status}`,
+      );
 
       const updatedTransaction =
         await this.checkoutService.updatePaymentStatus(paymentData);
 
-      switch (updatedTransaction.status) {
-        case TransactionStatus.APPROVED:
-          await this.checkoutService.handleApprovedTransaction(
-            updatedTransaction.id,
-          );
-          break;
-
-        case TransactionStatus.AUTHORIZED:
-          await this.checkoutService.handleApprovedTransaction(
-            updatedTransaction.id,
-          );
-          break;
-
-        case TransactionStatus.REFUNDED:
-          await this.checkoutService.handleRefundedTransaction(
-            updatedTransaction.id,
-          );
-          break;
+      if (!updatedTransaction) {
+        this.logger.error(
+          `Failed to update transaction | Payment ID: ${paymentData.id}`,
+        );
+        throw new InternalServerErrorException('Failed to update transaction.');
       }
-      return { message: 'OK' };
+
+      this.logger.log(
+        `Transaction updated | Transaction ID: ${updatedTransaction.id} | New Status: ${updatedTransaction.status}`,
+      );
+
+      await this.handleTransactionByStatus(
+        updatedTransaction.id,
+        updatedTransaction.status,
+      );
+
+      return { message: 'Webhook processed successfully.' };
     } catch (error) {
       this.logger.error(
-        `Error processing webhook: ${error.message}`,
+        `Error processing webhook | Message: ${error.message}`,
         error.stack,
       );
-      return { message: 'Internal error processing webhook' };
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof InternalServerErrorException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Unexpected error processing webhook.',
+      );
+    }
+  }
+
+  private async handleTransactionByStatus(
+    transactionId: string,
+    status: TransactionStatus,
+  ) {
+    switch (status) {
+      case TransactionStatus.APPROVED:
+      case TransactionStatus.AUTHORIZED:
+        this.logger.log(
+          `Handling approved transaction | Transaction ID: ${transactionId}`,
+        );
+        await this.checkoutService.handleApprovedTransaction(transactionId);
+        break;
+
+      case TransactionStatus.REFUNDED:
+        this.logger.log(
+          `Handling refunded transaction | Transaction ID: ${transactionId}`,
+        );
+        await this.checkoutService.handleRefundedTransaction(transactionId);
+        break;
+
+      default:
+        this.logger.warn(
+          `Unhandled transaction status | Transaction ID: ${transactionId} | Status: ${status}`,
+        );
+        break;
     }
   }
 }

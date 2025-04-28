@@ -1,4 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
@@ -10,6 +16,8 @@ import { TicketWithRelations } from './dto/ticket-with-relations.dto';
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   constructor(
     private readonly checkoutRepository: CheckoutRepository,
     private readonly paymentService: PaymentService,
@@ -50,7 +58,8 @@ export class CheckoutService {
       const available = lot.quantity - lot.soldQuantity;
 
       if (requested > available) {
-        throw new InternalServerErrorException(
+        this.logger.warn(`Not enough tickets available in lot "${lot.name}"`);
+        throw new BadRequestException(
           `The lot "${lot.name}" does not have enough tickets available.`,
         );
       }
@@ -65,7 +74,10 @@ export class CheckoutService {
       const available = category.quantity - category.soldQuantity;
 
       if (requested > available) {
-        throw new InternalServerErrorException(
+        this.logger.warn(
+          `Not enough tickets available in category "${category.title}"`,
+        );
+        throw new BadRequestException(
           `The category "${category.title}" does not have enough tickets available.`,
         );
       }
@@ -75,13 +87,17 @@ export class CheckoutService {
       const coupon = await this.checkoutRepository.findCouponById(dto.couponId);
 
       if (!coupon || coupon.deletedAt || !coupon.isActive) {
-        throw new InternalServerErrorException(`Invalid or inactive coupon.`);
+        this.logger.warn(
+          `Invalid or inactive coupon used | Coupon ID: ${dto.couponId}`,
+        );
+        throw new BadRequestException('Invalid or inactive coupon.');
       }
 
       const available = coupon.quantity - coupon.soldQuantity;
 
       if (couponCount! > available) {
-        throw new InternalServerErrorException(
+        this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
+        throw new BadRequestException(
           `The coupon "${coupon.name}" has already been used up to the allowed limit.`,
         );
       }
@@ -93,6 +109,7 @@ export class CheckoutService {
     );
 
     if (!checkoutResult) {
+      this.logger.error('Failed to create checkout transaction.');
       throw new InternalServerErrorException(
         'Error creating the checkout transaction.',
       );
@@ -104,6 +121,7 @@ export class CheckoutService {
     );
 
     if (!paymentResult) {
+      this.logger.error('Failed to process payment.');
       throw new InternalServerErrorException('Error processing the payment.');
     }
 
@@ -131,7 +149,10 @@ export class CheckoutService {
     ]);
 
     if (!lot || playerCount > lot.quantity - lot.soldQuantity) {
-      throw new InternalServerErrorException(
+      this.logger.warn(
+        `Not enough tickets available in lot "${lot?.name ?? ''}"`,
+      );
+      throw new BadRequestException(
         `The lot "${lot?.name ?? ''}" does not have enough tickets available.`,
       );
     }
@@ -143,7 +164,10 @@ export class CheckoutService {
     categories.forEach((c) => {
       const requested = categoryCounts.get(c.id)!;
       if (requested > c.quantity - c.soldQuantity) {
-        throw new InternalServerErrorException(
+        this.logger.warn(
+          `Not enough tickets available in category "${c.title}"`,
+        );
+        throw new BadRequestException(
           `The category "${c.title}" does not have enough tickets available.`,
         );
       }
@@ -155,6 +179,7 @@ export class CheckoutService {
     );
 
     if (!checkout) {
+      this.logger.error('Failed to create free checkout transaction.');
       throw new InternalServerErrorException(
         'Error creating the free checkout transaction.',
       );
@@ -169,42 +194,68 @@ export class CheckoutService {
   }
 
   async handleApprovedTransaction(transactionId: string) {
+    this.logger.log(
+      `Starting handleApprovedTransaction | Transaction ID: ${transactionId}`,
+    );
+
     const transaction =
       await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
         transactionId,
       );
 
     if (!transaction) {
-      throw new Error('Transaction not found.');
+      this.logger.warn(
+        `Transaction not found | Transaction ID: ${transactionId}`,
+      );
+      throw new NotFoundException('Transaction not found.');
     }
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
       if (!ticket.deliveredAt) {
+        this.logger.log(
+          `Sending ticket confirmation | Ticket ID: ${ticket.id}`,
+        );
         await this.emailService.sendTicketConfirmation(ticket);
         await this.checkoutRepository.markTicketAsDeliveredAndUpdateSoldQuantity(
           ticket.id,
         );
       }
     }
+
+    this.logger.log(
+      `handleApprovedTransaction completed | Transaction ID: ${transactionId}`,
+    );
   }
 
   async handleRefundedTransaction(transactionId: string) {
+    this.logger.log(
+      `Starting handleRefundedTransaction | Transaction ID: ${transactionId}`,
+    );
+
     const transaction =
       await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
         transactionId,
       );
-    if (!transaction) throw new Error('Transaction not found.');
+
+    if (!transaction) {
+      this.logger.warn(
+        `Transaction not found for refund | Transaction ID: ${transactionId}`,
+      );
+      throw new NotFoundException('Transaction not found.');
+    }
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
+      this.logger.log(`Processing ticket refund | Ticket ID: ${ticket.id}`);
       await this.checkoutRepository.decreaseSoldQuantity(ticket.id);
-
       await this.emailService.sendTicketRefund(ticket);
     }
+
+    this.logger.log(
+      `handleRefundedTransaction completed | Transaction ID: ${transactionId}`,
+    );
   }
 
   async updatePaymentStatus(gatewayResponse: MercadoPagoPaymentResponse) {
-    return await this.checkoutRepository.updateCheckoutTransaction(
-      gatewayResponse,
-    );
+    return this.checkoutRepository.updateCheckoutTransaction(gatewayResponse);
   }
 }
