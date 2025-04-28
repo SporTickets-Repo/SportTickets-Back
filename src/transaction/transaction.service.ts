@@ -36,15 +36,7 @@ export class TransactionService {
       throw new ForbiddenException('Access denied');
     }
 
-    if (tx.status === TransactionStatus.APPROVED) {
-      const undelivered = tx.tickets?.some((t) => !t.deliveredAt);
-      if (undelivered) {
-        this.logger.log(
-          `Found undelivered tickets, reprocessing confirmation | Transaction ID: ${id}`,
-        );
-        await this.checkoutService.handleApprovedTransaction(tx.id);
-      }
-    }
+    await this.handleTransactionByStatus(tx.id, tx.status);
 
     this.logger.log(`Transaction fetched successfully | Transaction ID: ${id}`);
     return tx;
@@ -60,5 +52,34 @@ export class TransactionService {
       `Fetched ${transactions.length} transactions linked to user events | User ID: ${userId}`,
     );
     return transactions;
+  }
+
+  private async handleTransactionByStatus(
+    transactionId: string,
+    status: TransactionStatus,
+  ) {
+    switch (status) {
+      case TransactionStatus.AUTHORIZED:
+      case TransactionStatus.APPROVED:
+        this.logger.log(
+          `Handling approved transaction | Transaction ID: ${transactionId}`,
+        );
+        await this.checkoutService.handleApprovedTransaction(transactionId);
+        break;
+
+      case TransactionStatus.CHARGED_BACK:
+      case TransactionStatus.REFUNDED:
+        this.logger.log(
+          `Handling refunded transaction | Transaction ID: ${transactionId}`,
+        );
+        await this.checkoutService.handleRefundedTransaction(transactionId);
+        break;
+
+      default:
+        this.logger.warn(
+          `Unhandled transaction status | Transaction ID: ${transactionId} | Status: ${status}`,
+        );
+        break;
+    }
   }
 }
