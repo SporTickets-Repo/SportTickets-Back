@@ -96,14 +96,15 @@ export class PaymentController {
     status: TransactionStatus,
   ) {
     switch (status) {
-      case TransactionStatus.APPROVED:
       case TransactionStatus.AUTHORIZED:
+      case TransactionStatus.APPROVED:
         this.logger.log(
           `Handling approved transaction | Transaction ID: ${transactionId}`,
         );
         await this.checkoutService.handleApprovedTransaction(transactionId);
         break;
 
+      case TransactionStatus.CHARGED_BACK:
       case TransactionStatus.REFUNDED:
         this.logger.log(
           `Handling refunded transaction | Transaction ID: ${transactionId}`,
