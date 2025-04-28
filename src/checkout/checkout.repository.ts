@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Prisma, TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -9,6 +9,7 @@ import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response'
 
 @Injectable()
 export class CheckoutRepository {
+  private readonly logger = new Logger(CheckoutRepository.name);
   constructor(private readonly prisma: PrismaService) {}
 
   async performCheckout(dto: CreateCheckoutDto, user: User) {
@@ -303,54 +304,125 @@ export class CheckoutRepository {
     });
 
     if (!ticket) {
+      this.logger.warn(
+        `Ticket not found for delivery | Ticket ID: ${ticketId}`,
+      );
       throw new BadRequestException('Ticket not found.');
     }
 
-    return this.prisma.$transaction([
+    this.logger.log(
+      `Preparing to mark ticket as delivered and increment soldQuantity | Ticket ID: ${ticket.id}`,
+    );
+
+    const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
+      this.prisma.ticketLot.findUnique({
+        where: { id: ticket.ticketLotId },
+        select: { soldQuantity: true },
+      }),
+      this.prisma.category.findUnique({
+        where: { id: ticket.categoryId },
+        select: { soldQuantity: true },
+      }),
+      ticket.couponId
+        ? this.prisma.coupon.findUnique({
+            where: { id: ticket.couponId },
+            select: { soldQuantity: true },
+          })
+        : null,
+    ]);
+
+    await this.prisma.$transaction([
       this.prisma.ticket.update({
         where: { id: ticket.id },
         data: { deliveredAt: new Date() },
       }),
-
       this.prisma.ticketLot.update({
         where: { id: ticket.ticketLotId },
-        data: {
-          soldQuantity: { increment: 1 },
-        },
+        data: { soldQuantity: { increment: 1 } },
       }),
-
       this.prisma.category.update({
         where: { id: ticket.categoryId },
-        data: {
-          soldQuantity: { increment: 1 },
-        },
+        data: { soldQuantity: { increment: 1 } },
       }),
-
       ...(ticket.couponId
         ? [
             this.prisma.coupon.update({
               where: { id: ticket.couponId },
-              data: {
-                soldQuantity: { increment: 1 },
-              },
+              data: { soldQuantity: { increment: 1 } },
             }),
           ]
         : []),
     ]);
+
+    const [lotAfter, categoryAfter, couponAfter] = await Promise.all([
+      this.prisma.ticketLot.findUnique({
+        where: { id: ticket.ticketLotId },
+        select: { soldQuantity: true },
+      }),
+      this.prisma.category.findUnique({
+        where: { id: ticket.categoryId },
+        select: { soldQuantity: true },
+      }),
+      ticket.couponId
+        ? this.prisma.coupon.findUnique({
+            where: { id: ticket.couponId },
+            select: { soldQuantity: true },
+          })
+        : null,
+    ]);
+
+    this.logger.log(`Ticket delivered successfully | Ticket ID: ${ticket.id}`);
+    this.logger.log(
+      `Lot soldQuantity updated: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity}`,
+    );
+    this.logger.log(
+      `Category soldQuantity updated: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}`,
+    );
+    if (ticket.couponId) {
+      this.logger.log(
+        `Coupon soldQuantity updated: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`,
+      );
+    }
   }
 
   async decreaseSoldQuantity(ticketId: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
       select: {
+        id: true,
         ticketLotId: true,
         categoryId: true,
         couponId: true,
       },
     });
-    if (!ticket) throw new BadRequestException('Ticket not found.');
 
-    return this.prisma.$transaction([
+    if (!ticket) {
+      this.logger.warn(`Ticket not found for refund | Ticket ID: ${ticketId}`);
+      throw new BadRequestException('Ticket not found.');
+    }
+
+    this.logger.log(
+      `Preparing to refund ticket and decrement soldQuantity | Ticket ID: ${ticket.id}`,
+    );
+
+    const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
+      this.prisma.ticketLot.findUnique({
+        where: { id: ticket.ticketLotId },
+        select: { soldQuantity: true },
+      }),
+      this.prisma.category.findUnique({
+        where: { id: ticket.categoryId },
+        select: { soldQuantity: true },
+      }),
+      ticket.couponId
+        ? this.prisma.coupon.findUnique({
+            where: { id: ticket.couponId },
+            select: { soldQuantity: true },
+          })
+        : null,
+    ]);
+
+    await this.prisma.$transaction([
       this.prisma.ticketLot.update({
         where: { id: ticket.ticketLotId },
         data: { soldQuantity: { increment: -1 } },
@@ -368,6 +440,36 @@ export class CheckoutRepository {
           ]
         : []),
     ]);
+
+    const [lotAfter, categoryAfter, couponAfter] = await Promise.all([
+      this.prisma.ticketLot.findUnique({
+        where: { id: ticket.ticketLotId },
+        select: { soldQuantity: true },
+      }),
+      this.prisma.category.findUnique({
+        where: { id: ticket.categoryId },
+        select: { soldQuantity: true },
+      }),
+      ticket.couponId
+        ? this.prisma.coupon.findUnique({
+            where: { id: ticket.couponId },
+            select: { soldQuantity: true },
+          })
+        : null,
+    ]);
+
+    this.logger.log(`Ticket refunded successfully | Ticket ID: ${ticket.id}`);
+    this.logger.log(
+      `Lot soldQuantity updated: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity}`,
+    );
+    this.logger.log(
+      `Category soldQuantity updated: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}`,
+    );
+    if (ticket.couponId) {
+      this.logger.log(
+        `Coupon soldQuantity updated: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`,
+      );
+    }
   }
 
   findLotsByTicketTypeIds(ids: string[]) {

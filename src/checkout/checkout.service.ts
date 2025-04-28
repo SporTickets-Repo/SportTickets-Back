@@ -49,59 +49,12 @@ export class CheckoutService {
       }
     }
 
-    const lots = await this.checkoutRepository.findLotsByTicketTypeIds([
-      ...ticketTypeCounts.keys(),
-    ]);
-
-    for (const lot of lots) {
-      const requested = ticketTypeCounts.get(lot.ticketTypeId)!;
-      const available = lot.quantity - lot.soldQuantity;
-
-      if (requested > available) {
-        this.logger.warn(`Not enough tickets available in lot "${lot.name}"`);
-        throw new BadRequestException(
-          `The lot "${lot.name}" does not have enough tickets available.`,
-        );
-      }
-    }
-
-    const categories = await this.checkoutRepository.findCategoriesByIds([
-      ...categoryCounts.keys(),
-    ]);
-
-    for (const category of categories) {
-      const requested = categoryCounts.get(category.id)!;
-      const available = category.quantity - category.soldQuantity;
-
-      if (requested > available) {
-        this.logger.warn(
-          `Not enough tickets available in category "${category.title}"`,
-        );
-        throw new BadRequestException(
-          `The category "${category.title}" does not have enough tickets available.`,
-        );
-      }
-    }
-
-    if (dto.couponId) {
-      const coupon = await this.checkoutRepository.findCouponById(dto.couponId);
-
-      if (!coupon || coupon.deletedAt || !coupon.isActive) {
-        this.logger.warn(
-          `Invalid or inactive coupon used | Coupon ID: ${dto.couponId}`,
-        );
-        throw new BadRequestException('Invalid or inactive coupon.');
-      }
-
-      const available = coupon.quantity - coupon.soldQuantity;
-
-      if (couponCount! > available) {
-        this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
-        throw new BadRequestException(
-          `The coupon "${coupon.name}" has already been used up to the allowed limit.`,
-        );
-      }
-    }
+    await this.validateLotsAndCategories(
+      ticketTypeCounts,
+      categoryCounts,
+      couponCount,
+      dto.couponId,
+    );
 
     const checkoutResult = await this.checkoutRepository.performCheckout(
       dto,
@@ -157,21 +110,7 @@ export class CheckoutService {
       );
     }
 
-    const categories = await this.checkoutRepository.findCategoriesByIds([
-      ...categoryCounts.keys(),
-    ]);
-
-    categories.forEach((c) => {
-      const requested = categoryCounts.get(c.id)!;
-      if (requested > c.quantity - c.soldQuantity) {
-        this.logger.warn(
-          `Not enough tickets available in category "${c.title}"`,
-        );
-        throw new BadRequestException(
-          `The category "${c.title}" does not have enough tickets available.`,
-        );
-      }
-    });
+    await this.validateCategories(categoryCounts);
 
     const checkout = await this.checkoutRepository.performFreeCheckout(
       team,
@@ -212,9 +151,6 @@ export class CheckoutService {
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
       if (!ticket.deliveredAt) {
-        this.logger.log(
-          `Sending ticket confirmation | Ticket ID: ${ticket.id}`,
-        );
         await this.emailService.sendTicketConfirmation(ticket);
         await this.checkoutRepository.markTicketAsDeliveredAndUpdateSoldQuantity(
           ticket.id,
@@ -245,7 +181,6 @@ export class CheckoutService {
     }
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
-      this.logger.log(`Processing ticket refund | Ticket ID: ${ticket.id}`);
       await this.checkoutRepository.decreaseSoldQuantity(ticket.id);
       await this.emailService.sendTicketRefund(ticket);
     }
@@ -257,5 +192,70 @@ export class CheckoutService {
 
   async updatePaymentStatus(gatewayResponse: MercadoPagoPaymentResponse) {
     return this.checkoutRepository.updateCheckoutTransaction(gatewayResponse);
+  }
+
+  private async validateLotsAndCategories(
+    ticketTypeCounts: Map<string, number>,
+    categoryCounts: Map<string, number>,
+    couponCount: number | null,
+    couponId?: string,
+  ) {
+    const lots = await this.checkoutRepository.findLotsByTicketTypeIds([
+      ...ticketTypeCounts.keys(),
+    ]);
+
+    for (const lot of lots) {
+      const requested = ticketTypeCounts.get(lot.ticketTypeId)!;
+      const available = lot.quantity - lot.soldQuantity;
+
+      if (requested > available) {
+        this.logger.warn(`Not enough tickets available in lot "${lot.name}"`);
+        throw new BadRequestException(
+          `The lot "${lot.name}" does not have enough tickets available.`,
+        );
+      }
+    }
+
+    await this.validateCategories(categoryCounts);
+
+    if (couponId) {
+      const coupon = await this.checkoutRepository.findCouponById(couponId);
+
+      if (!coupon || coupon.deletedAt || !coupon.isActive) {
+        this.logger.warn(
+          `Invalid or inactive coupon used | Coupon ID: ${couponId}`,
+        );
+        throw new BadRequestException('Invalid or inactive coupon.');
+      }
+
+      const available = coupon.quantity - coupon.soldQuantity;
+
+      if (couponCount! > available) {
+        this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
+        throw new BadRequestException(
+          `The coupon "${coupon.name}" has already been used up to the allowed limit.`,
+        );
+      }
+    }
+  }
+
+  private async validateCategories(categoryCounts: Map<string, number>) {
+    const categories = await this.checkoutRepository.findCategoriesByIds([
+      ...categoryCounts.keys(),
+    ]);
+
+    for (const category of categories) {
+      const requested = categoryCounts.get(category.id)!;
+      const available = category.quantity - category.soldQuantity;
+
+      if (requested > available) {
+        this.logger.warn(
+          `Not enough tickets available in category "${category.title}"`,
+        );
+        throw new BadRequestException(
+          `The category "${category.title}" does not have enough tickets available.`,
+        );
+      }
+    }
   }
 }
