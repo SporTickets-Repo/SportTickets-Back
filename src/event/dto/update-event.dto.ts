@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -136,6 +137,24 @@ export class UpdateEventDto {
     required: false,
   })
   regulation?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    example: 'true',
+    description: 'Permitir contagem total de ingresso',
+    required: false,
+  })
+  allowFullTickets?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    example: true,
+    description: 'Permitir contagem por tipo de ingressos',
+    required: false,
+  })
+  allowIndividualTickets?: boolean;
 
   @IsString()
   @IsOptional()
