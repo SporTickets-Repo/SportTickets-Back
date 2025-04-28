@@ -82,6 +82,7 @@ model Transaction {
   paymentProvider   PaymentProvider?
   paidAt            DateTime?
   refundedAt        DateTime?
+  cancelledAt       DateTime?
   pixQRCode         String?
   response          Json?
 
