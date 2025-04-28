@@ -99,7 +99,12 @@ export class EventService {
       }
     }
 
-    const { address, ...rest } = updateEventDto;
+    const {
+      allowFullTickets: fullStr,
+      allowIndividualTickets: indivStr,
+      address,
+      ...rest
+    } = updateEventDto;
 
     const paymentMethods =
       updateEventDto.paymentMethods &&
@@ -111,6 +116,12 @@ export class EventService {
       ...rest,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
+      ...(fullStr !== undefined && {
+        allowFullTickets: fullStr === 'true',
+      }),
+      ...(indivStr !== undefined && {
+        allowIndividualTickets: indivStr === 'true',
+      }),
       paymentMethods: paymentMethods ?? [],
       bannerUrl,
       smallImageUrl,
