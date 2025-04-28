@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -81,5 +82,43 @@ export class TransactionService {
         );
         break;
     }
+  }
+
+  async refundFreeTransaction(transactionId: string, user: User) {
+    this.logger.log(
+      `Refund request received | Transaction ID: ${transactionId} | User ID: ${user.id}`,
+    );
+
+    const tx = await this.transactionRepository.findById(transactionId);
+
+    if (!tx) {
+      this.logger.warn(
+        `Transaction not found | Transaction ID: ${transactionId}`,
+      );
+      throw new NotFoundException('Transaction not found.');
+    }
+
+    if (tx.paymentMethod !== 'FREE' || tx.totalValue.gt(0)) {
+      this.logger.warn(
+        `Refund not allowed: Payment method is not FREE | Transaction ID: ${transactionId}`,
+      );
+      throw new BadRequestException(
+        'Refund not allowed for this payment method.',
+      );
+    }
+
+    this.logger.log(
+      `Processing refund for FREE transaction | Transaction ID: ${transactionId}`,
+    );
+
+    await this.checkoutService.handleRefundedTransaction(transactionId);
+
+    this.logger.log(
+      `Refund completed for FREE transaction | Transaction ID: ${transactionId}`,
+    );
+
+    return {
+      message: 'Free transaction refunded successfully.',
+    };
   }
 }

@@ -1,17 +1,22 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Logger,
   Param,
+  Post,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
+import { isUUID } from 'class-validator';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { TransactionService } from './transaction.service';
 
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TransactionController {
   private readonly logger = new Logger(TransactionController.name);
 
@@ -46,5 +51,31 @@ export class TransactionController {
       `Transactions for user events retrieved successfully | User ID: ${req.user.id} | Total: ${transactions.length}`,
     );
     return transactions;
+  }
+
+  @Roles(Role.MASTER)
+  @Post(':id/refund')
+  async refundFreeTransaction(
+    @Param('id') id: string,
+    @Request() req: { user: User },
+  ) {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid transaction ID format');
+    }
+
+    this.logger.log(
+      `Request to refund FREE transaction | Transaction ID: ${id} | User ID: ${req.user.id}`,
+    );
+
+    const result = await this.transactionService.refundFreeTransaction(
+      id,
+      req.user,
+    );
+
+    this.logger.log(
+      `Refund processed successfully | Transaction ID: ${id} | User ID: ${req.user.id}`,
+    );
+
+    return result;
   }
 }

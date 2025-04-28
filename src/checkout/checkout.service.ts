@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { TransactionStatus, User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
@@ -179,6 +179,21 @@ export class CheckoutService {
       );
       throw new NotFoundException('Transaction not found.');
     }
+
+    if (transaction.status !== TransactionStatus.APPROVED) {
+      this.logger.warn(
+        `Transaction status does not allow refund | Transaction ID: ${transactionId} | Status: ${transaction.status}`,
+      );
+      throw new BadRequestException('Transaction already canceled.');
+    }
+
+    this.logger.log(
+      `Updating transaction status to REFUNDED | Transaction ID: ${transactionId}`,
+    );
+    await this.checkoutRepository.updateRefundedStatus(
+      transactionId,
+      TransactionStatus.REFUNDED,
+    );
 
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
       await this.checkoutRepository.decreaseSoldQuantity(ticket.id);

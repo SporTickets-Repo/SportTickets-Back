@@ -65,10 +65,16 @@ export class PaymentController {
         `Transaction updated | Transaction ID: ${updatedTransaction.id} | New Status: ${updatedTransaction.status}`,
       );
 
-      await this.handleTransactionByStatus(
-        updatedTransaction.id,
-        updatedTransaction.status,
-      );
+      try {
+        await this.handleTransactionByStatus(
+          updatedTransaction.id,
+          updatedTransaction.status,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Error handling transaction by status | Transaction ID: ${updatedTransaction.id} | Error: ${error.message}`,
+        );
+      }
 
       return { message: 'Webhook processed successfully.' };
     } catch (error) {
