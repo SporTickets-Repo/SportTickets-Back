@@ -37,7 +37,12 @@ export class TransactionService {
       throw new ForbiddenException('Access denied');
     }
 
-    await this.handleTransactionByStatus(tx.id, tx.status);
+    if (
+      (tx.status === TransactionStatus.REFUNDED && tx.refundedAt === null) ||
+      (tx.status === TransactionStatus.CHARGED_BACK && tx.refundedAt === null)
+    ) {
+      await this.handleTransactionByStatus(tx.id, tx.status);
+    }
 
     this.logger.log(`Transaction fetched successfully | Transaction ID: ${id}`);
     return tx;

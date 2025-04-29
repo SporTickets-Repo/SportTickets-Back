@@ -180,7 +180,7 @@ export class CheckoutService {
       throw new NotFoundException('Transaction not found.');
     }
 
-    if (transaction.status !== TransactionStatus.APPROVED) {
+    if (transaction.refundedAt !== null) {
       this.logger.warn(
         `Transaction status does not allow refund | Transaction ID: ${transactionId} | Status: ${transaction.status}`,
       );
