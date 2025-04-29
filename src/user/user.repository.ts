@@ -111,10 +111,7 @@ export class UserRepository {
     data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<User> {
     return this.prisma.user.create({
-      data: {
-        ...data,
-        phone: data.phone ?? null,
-      },
+      data,
     });
   }
 }

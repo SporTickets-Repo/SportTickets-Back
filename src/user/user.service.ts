@@ -147,13 +147,16 @@ export class UserService {
   }
 
   async registerUser(registerUserDto: RegisterUserDto) {
+    const sanitizedEmail = registerUserDto.email.toLowerCase();
+    const sanitizedPhone = registerUserDto.phone?.replace(/\D/g, '');
+    const sanitizedCep = registerUserDto.cep.replace(/\D/g, '');
+    const sanitizedDocument = registerUserDto.document.replace(/\D/g, '');
+
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([
-        this.userRepository.findUserByEmailRegister(registerUserDto.email),
-        this.userRepository.findUserByDocument(registerUserDto.document),
-        registerUserDto.phone
-          ? this.userRepository.findUserByPhone(registerUserDto.phone)
-          : Promise.resolve(null),
+        this.userRepository.findUserByEmailRegister(sanitizedEmail),
+        this.userRepository.findUserByDocument(sanitizedDocument),
+        this.userRepository.findUserByPhone(sanitizedPhone),
       ]);
 
     if (existingByEmail) throw new ConflictException('Email already exists');
@@ -162,8 +165,11 @@ export class UserService {
 
     const newUser = await this.userRepository.createUser({
       ...registerUserDto,
+      email: sanitizedEmail,
+      phone: sanitizedPhone,
+      cep: sanitizedCep,
+      document: sanitizedDocument,
       bornAt: new Date(registerUserDto.bornAt),
-      phone: registerUserDto.phone ?? null,
       documentType: 'CPF',
       password: '',
       role: 'USER',
