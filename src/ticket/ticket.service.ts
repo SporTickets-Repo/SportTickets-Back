@@ -12,4 +12,8 @@ export class TicketService {
   async getAllTickets(userId: string) {
     return this.ticketRepository.findAllTickets(userId);
   }
+
+  async getTicketByCode(code: string) {
+    return this.ticketRepository.findTicketByCode(code);
+  }
 }

@@ -423,18 +423,18 @@ export class CheckoutRepository {
     ]);
 
     await this.prisma.$transaction([
-      this.prisma.ticketLot.update({
-        where: { id: ticket.ticketLotId },
+      this.prisma.ticketLot.updateMany({
+        where: { id: ticket.ticketLotId, soldQuantity: { gt: 0 } },
         data: { soldQuantity: { increment: -1 } },
       }),
-      this.prisma.category.update({
-        where: { id: ticket.categoryId },
+      this.prisma.category.updateMany({
+        where: { id: ticket.categoryId, soldQuantity: { gt: 0 } },
         data: { soldQuantity: { increment: -1 } },
       }),
       ...(ticket.couponId
         ? [
-            this.prisma.coupon.update({
-              where: { id: ticket.couponId },
+            this.prisma.coupon.updateMany({
+              where: { id: ticket.couponId, soldQuantity: { gt: 0 } },
               data: { soldQuantity: { increment: -1 } },
             }),
           ]
@@ -511,6 +511,13 @@ export class CheckoutRepository {
         isActive: true,
         deletedAt: true,
       },
+    });
+  }
+
+  async updateRefundedStatus(transactionId: string, status: TransactionStatus) {
+    return this.prisma.transaction.update({
+      where: { id: transactionId },
+      data: { status, refundedAt: new Date() },
     });
   }
 }

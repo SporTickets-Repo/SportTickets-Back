@@ -187,4 +187,31 @@ export class TicketRepository {
       },
     });
   }
+
+  async findTicketByCode(code: string) {
+    return this.prisma.ticket.findFirst({
+      where: {
+        code,
+      },
+      include: {
+        transaction: true,
+        team: {
+          include: {
+            tickets: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    document: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }
