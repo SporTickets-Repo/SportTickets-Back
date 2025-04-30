@@ -39,7 +39,9 @@ export class TransactionService {
 
     if (
       (tx.status === TransactionStatus.REFUNDED && tx.refundedAt === null) ||
-      (tx.status === TransactionStatus.CHARGED_BACK && tx.refundedAt === null)
+      (tx.status === TransactionStatus.CHARGED_BACK &&
+        tx.refundedAt === null) ||
+      tx.status === TransactionStatus.APPROVED
     ) {
       await this.handleTransactionByStatus(tx.id, tx.status);
     }

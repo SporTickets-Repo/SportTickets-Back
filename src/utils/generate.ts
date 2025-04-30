@@ -17,10 +17,10 @@ export async function generatePdf(html: string): Promise<Buffer> {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        // '--disable-dev-shm-usage',
-        // '--disable-gpu',
-        // '--single-process',
-        // '--no-zygote',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
       ],
     });
     const page = await browser.newPage();
