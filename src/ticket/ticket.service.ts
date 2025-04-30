@@ -9,11 +9,19 @@ export class TicketService {
     return this.ticketRepository.findTicketsByUser(userId);
   }
 
+  async getMyTicketsMaster(userId: string) {
+    return this.ticketRepository.findTicketsByUser(userId);
+  }
+
   async getAllTickets(userId: string) {
     return this.ticketRepository.findAllTickets(userId);
   }
 
   async getTicketByCode(code: string) {
     return this.ticketRepository.findTicketByCode(code);
+  }
+
+  async getAllTicketsMaster(userId: string) {
+    return this.ticketRepository.findAllTickets(userId);
   }
 }

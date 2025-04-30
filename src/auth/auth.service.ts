@@ -74,14 +74,18 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
-
   async register(registerDto: RegisterDto): Promise<Omit<User, 'password'>> {
+    const sanitizedEmail = registerDto.email.toLowerCase();
+    const sanitizedPhone = registerDto.phone?.replace(/\D/g, '');
+    const sanitizedCep = registerDto.cep.replace(/\D/g, '');
+    const sanitizedDocument = registerDto.document.replace(/\D/g, '');
+
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([
-        this.authRepository.findUserByEmail(registerDto.email),
-        this.authRepository.findUserByDocument(registerDto.document),
-        registerDto.phone
-          ? this.authRepository.findUserByPhone(registerDto.phone)
+        this.authRepository.findUserByEmail(sanitizedEmail),
+        this.authRepository.findUserByDocument(sanitizedDocument),
+        sanitizedPhone
+          ? this.authRepository.findUserByPhone(sanitizedPhone)
           : Promise.resolve(null),
       ]);
 
@@ -95,6 +99,10 @@ export class AuthService {
 
     const newUser = await this.authRepository.createUser({
       ...userData,
+      email: sanitizedEmail,
+      phone: sanitizedPhone,
+      cep: sanitizedCep,
+      document: sanitizedDocument,
       password: hashedPassword,
       bornAt: new Date(userData.bornAt),
     });

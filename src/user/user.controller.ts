@@ -97,19 +97,25 @@ export class UserController {
     return this.userService.updateUserRole(userId, updateRoleDto);
   }
 
-  @Roles(Role.ADMIN, Role.PARTNER)
+  @Roles(Role.ADMIN, Role.PARTNER, Role.MASTER)
   @Get('all')
   async getUsers() {
     return this.userService.getUsers();
   }
 
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.MASTER)
   @Get('collaborators/:identifier')
   async getCollaborators(
     @Param('identifier') identifier: string,
     @Request() req: { user: User },
   ) {
     return this.userService.getUserByIdentifier(identifier, req.user.id);
+  }
+
+  @Roles(Role.ADMIN, Role.MASTER)
+  @Get('by-id/:id')
+  async getUserById(@Param('id') id: string) {
+    return this.userService.getUserById(id);
   }
 
   @Get('by-email/:email')

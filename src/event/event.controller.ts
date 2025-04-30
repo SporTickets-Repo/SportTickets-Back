@@ -78,6 +78,13 @@ export class EventController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MASTER)
+  @Get('all-master/:userId')
+  async getAllMasterEvents(@Param('userId') userId: string) {
+    return this.eventService.getAllMasterEvents(userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.PARTNER)
   @Post('init')
   async initEvent(@Request() req: { user: User }) {
