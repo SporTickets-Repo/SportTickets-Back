@@ -71,20 +71,20 @@ export class PaymentController {
   }
 
   private async handleTransactionByStatus(
-    id: string,
+    transactionId: string,
     status: TransactionStatus,
   ) {
     switch (status) {
       case TransactionStatus.AUTHORIZED:
       case TransactionStatus.APPROVED:
-        await this.checkoutService.handleApprovedTransaction(id);
+        await this.checkoutService.handleApprovedTransaction(transactionId);
         break;
       case TransactionStatus.CHARGED_BACK:
       case TransactionStatus.REFUNDED:
-        await this.checkoutService.handleRefundedTransaction(id);
+        await this.checkoutService.handleRefundedTransaction(transactionId);
         break;
       default:
-        this.logger.warn(`Unhandled status | Tx ${id} | ${status}`);
+        this.logger.warn(`Unhandled status | Tx ${transactionId} | ${status}`);
     }
   }
 }

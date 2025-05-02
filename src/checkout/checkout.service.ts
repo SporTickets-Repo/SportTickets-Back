@@ -113,7 +113,7 @@ export class CheckoutService {
     await this.validateCategories(categoryCounts);
 
     const checkout = await this.checkoutRepository.performFreeCheckout(
-      dto.team,
+      team,
       user,
     );
 
