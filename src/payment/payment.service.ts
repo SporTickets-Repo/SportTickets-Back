@@ -36,19 +36,13 @@ export class PaymentService {
       );
 
       if (!response.ok) {
-        this.logger.error(
-          `Error fetching payment | Payment ID: ${paymentId} | Status: ${response.status}`,
-        );
+        this.logger.error(`MP fetch failed | id=${paymentId}`);
         return null;
       }
 
-      const paymentData = await response.json();
-      return paymentData;
+      return response.json();
     } catch (error) {
-      this.logger.error(
-        `Exception fetching payment | Payment ID: ${paymentId} | Message: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`MP fetch exception | id=${paymentId}`, error.stack);
       return null;
     }
   }

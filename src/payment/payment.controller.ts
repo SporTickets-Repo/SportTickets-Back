@@ -28,69 +28,42 @@ export class PaymentController {
     const type = body?.type;
 
     if (!paymentId || type !== 'payment') {
-      this.logger.warn(
-        `Ignored invalid webhook | Type: ${type}, Payment ID: ${paymentId}`,
-      );
+      this.logger.warn(`Invalid webhook | type=${type} id=${paymentId}`);
       throw new BadRequestException('Invalid webhook payload.');
     }
 
-    this.logger.log(
-      `Processing webhook | Payment ID: ${paymentId} | Type: ${type}`,
-    );
+    this.logger.log(`Webhook received | id=${paymentId}`);
 
     try {
       const paymentData =
         await this.paymentService.fetchMercadoPagoPayment(paymentId);
-
       if (!paymentData) {
-        this.logger.error(`Payment data not found | Payment ID: ${paymentId}`);
+        this.logger.error(`Payment not found | id=${paymentId}`);
         throw new NotFoundException('Payment data not found.');
       }
-
-      this.logger.log(
-        `Payment fetched | Payment ID: ${paymentData.id} | Status: ${paymentData.status}`,
-      );
 
       const updatedTransaction =
         await this.checkoutService.updatePaymentStatus(paymentData);
 
       if (!updatedTransaction) {
-        this.logger.error(
-          `Failed to update transaction | Payment ID: ${paymentData.id}`,
-        );
+        this.logger.error(`Tx update failed | payment=${paymentData.id}`);
         throw new InternalServerErrorException('Failed to update transaction.');
       }
 
-      this.logger.log(
-        `Transaction updated | Transaction ID: ${updatedTransaction.id} | New Status: ${updatedTransaction.status}`,
+      await this.handleTransactionByStatus(
+        updatedTransaction.id,
+        updatedTransaction.status,
       );
 
-      try {
-        await this.handleTransactionByStatus(
-          updatedTransaction.id,
-          updatedTransaction.status,
-        );
-      } catch (error) {
-        this.logger.error(
-          `Error handling transaction by status | Transaction ID: ${updatedTransaction.id} | Error: ${error.message}`,
-        );
-      }
-
-      return { message: 'Webhook processed successfully.' };
+      return { message: 'Webhook processed.' };
     } catch (error) {
-      this.logger.error(
-        `Error processing webhook | Message: ${error.message}`,
-        error.stack,
-      );
-
+      this.logger.error(`Webhook error | ${error.message}`, error.stack);
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException ||
-        error instanceof InternalServerErrorException
+        error instanceof NotFoundException
       ) {
         throw error;
       }
-
       throw new InternalServerErrorException(
         'Unexpected error processing webhook.',
       );
@@ -98,31 +71,20 @@ export class PaymentController {
   }
 
   private async handleTransactionByStatus(
-    transactionId: string,
+    id: string,
     status: TransactionStatus,
   ) {
     switch (status) {
       case TransactionStatus.AUTHORIZED:
       case TransactionStatus.APPROVED:
-        this.logger.log(
-          `Handling approved transaction | Transaction ID: ${transactionId}`,
-        );
-        await this.checkoutService.handleApprovedTransaction(transactionId);
+        await this.checkoutService.handleApprovedTransaction(id);
         break;
-
       case TransactionStatus.CHARGED_BACK:
       case TransactionStatus.REFUNDED:
-        this.logger.log(
-          `Handling refunded transaction | Transaction ID: ${transactionId}`,
-        );
-        await this.checkoutService.handleRefundedTransaction(transactionId);
+        await this.checkoutService.handleRefundedTransaction(id);
         break;
-
       default:
-        this.logger.warn(
-          `Unhandled transaction status | Transaction ID: ${transactionId} | Status: ${status}`,
-        );
-        break;
+        this.logger.warn(`Unhandled status | Tx ${id} | ${status}`);
     }
   }
 }

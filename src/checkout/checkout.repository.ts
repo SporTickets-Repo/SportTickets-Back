@@ -310,10 +310,6 @@ export class CheckoutRepository {
       throw new BadRequestException('Ticket not found.');
     }
 
-    this.logger.log(
-      `Preparing to mark ticket as delivered and increment soldQuantity | Ticket ID: ${ticket.id}`,
-    );
-
     const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
       this.prisma.ticketLot.findUnique({
         where: { id: ticket.ticketLotId },
@@ -371,18 +367,13 @@ export class CheckoutRepository {
         : null,
     ]);
 
-    this.logger.log(`Ticket delivered successfully | Ticket ID: ${ticket.id}`);
     this.logger.log(
-      `Lot soldQuantity updated: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity}`,
+      `Ticket delivered successfully | Ticket ID: ${ticket.id} | Lot soldQuantity: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity} | Category soldQuantity: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}${
+        ticket.couponId
+          ? ` | Coupon soldQuantity: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`
+          : ''
+      }`,
     );
-    this.logger.log(
-      `Category soldQuantity updated: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}`,
-    );
-    if (ticket.couponId) {
-      this.logger.log(
-        `Coupon soldQuantity updated: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`,
-      );
-    }
   }
 
   async decreaseSoldQuantity(ticketId: string) {
@@ -400,10 +391,6 @@ export class CheckoutRepository {
       this.logger.warn(`Ticket not found for refund | Ticket ID: ${ticketId}`);
       throw new BadRequestException('Ticket not found.');
     }
-
-    this.logger.log(
-      `Preparing to refund ticket and decrement soldQuantity | Ticket ID: ${ticket.id}`,
-    );
 
     const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
       this.prisma.ticketLot.findUnique({
@@ -458,18 +445,13 @@ export class CheckoutRepository {
         : null,
     ]);
 
-    this.logger.log(`Ticket refunded successfully | Ticket ID: ${ticket.id}`);
     this.logger.log(
-      `Lot soldQuantity updated: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity}`,
+      `Ticket refunded successfully | Ticket ID: ${ticket.id} | Lot soldQuantity: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity} | Category soldQuantity: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}${
+        ticket.couponId
+          ? ` | Coupon soldQuantity: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`
+          : ''
+      }`,
     );
-    this.logger.log(
-      `Category soldQuantity updated: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}`,
-    );
-    if (ticket.couponId) {
-      this.logger.log(
-        `Coupon soldQuantity updated: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`,
-      );
-    }
   }
 
   findLotsByTicketTypeIds(ids: string[]) {

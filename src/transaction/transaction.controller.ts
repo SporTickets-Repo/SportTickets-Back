@@ -27,30 +27,14 @@ export class TransactionController {
     @Param('id') id: string,
     @Request() req: { user: User },
   ) {
-    this.logger.log(
-      `Request to get transaction by ID | Transaction ID: ${id} | User ID: ${req.user.id}`,
-    );
-    const transaction = await this.transactionService.getTransactionById(
-      id,
-      req.user,
-    );
-    this.logger.log(
-      `Transaction retrieved successfully | Transaction ID: ${id} | User ID: ${req.user.id}`,
-    );
-    return transaction;
+    this.logger.log(`GET /transactions/${id} | User ${req.user.id}`);
+
+    return this.transactionService.getTransactionById(id, req.user);
   }
 
   @Get('event/list')
   async getTransactionsByUserEvents(@Request() req) {
-    this.logger.log(
-      `Request to list transactions for user events | User ID: ${req.user.id}`,
-    );
-    const transactions =
-      await this.transactionService.getTransactionsByUserEvents(req.user.id);
-    this.logger.log(
-      `Transactions for user events retrieved successfully | User ID: ${req.user.id} | Total: ${transactions.length}`,
-    );
-    return transactions;
+    return this.transactionService.getTransactionsByUserEvents(req.user.id);
   }
 
   @Roles(Role.MASTER)
@@ -63,19 +47,8 @@ export class TransactionController {
       throw new BadRequestException('Invalid transaction ID format');
     }
 
-    this.logger.log(
-      `Request to refund FREE transaction | Transaction ID: ${id} | User ID: ${req.user.id}`,
-    );
+    this.logger.log(`Refund request (FREE) | Tx ${id} | User ${req.user.id}`);
 
-    const result = await this.transactionService.refundFreeTransaction(
-      id,
-      req.user,
-    );
-
-    this.logger.log(
-      `Refund processed successfully | Transaction ID: ${id} | User ID: ${req.user.id}`,
-    );
-
-    return result;
+    return this.transactionService.refundFreeTransaction(id, req.user);
   }
 }

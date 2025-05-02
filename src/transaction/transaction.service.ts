@@ -19,47 +19,32 @@ export class TransactionService {
   ) {}
 
   async getTransactionById(id: string, user: User) {
-    this.logger.log(
-      `Fetching transaction | Transaction ID: ${id} | Requester User ID: ${user.id}`,
-    );
-
     const tx = await this.transactionRepository.findById(id);
 
     if (!tx) {
-      this.logger.warn(`Transaction not found | Transaction ID: ${id}`);
+      this.logger.warn(`Tx not found | ${id}`);
       throw new NotFoundException('Transaction not found');
     }
 
     if (tx.createdById !== user.id && user.role !== Role.MASTER) {
-      this.logger.warn(
-        `Access denied to transaction | Transaction ID: ${id} | Requester User ID: ${user.id}`,
-      );
+      this.logger.warn(`Forbidden access | Tx ${id} by ${user.id}`);
       throw new ForbiddenException('Access denied');
     }
 
     if (
-      (tx.status === TransactionStatus.REFUNDED && tx.refundedAt === null) ||
-      (tx.status === TransactionStatus.CHARGED_BACK &&
-        tx.refundedAt === null) ||
+      (tx.status === TransactionStatus.REFUNDED && !tx.refundedAt) ||
+      (tx.status === TransactionStatus.CHARGED_BACK && !tx.refundedAt) ||
       tx.status === TransactionStatus.APPROVED
     ) {
       await this.handleTransactionByStatus(tx.id, tx.status);
+      this.logger.log(`Business handled | Tx ${id} | Status ${tx.status}`);
     }
 
-    this.logger.log(`Transaction fetched successfully | Transaction ID: ${id}`);
     return tx;
   }
 
   async getTransactionsByUserEvents(userId: string) {
-    this.logger.log(
-      `Fetching transactions by user events | User ID: ${userId}`,
-    );
-    const transactions =
-      await this.transactionRepository.findByUserEvents(userId);
-    this.logger.log(
-      `Fetched ${transactions.length} transactions linked to user events | User ID: ${userId}`,
-    );
-    return transactions;
+    return this.transactionRepository.findByUserEvents(userId);
   }
 
   private async handleTransactionByStatus(
@@ -69,63 +54,35 @@ export class TransactionService {
     switch (status) {
       case TransactionStatus.AUTHORIZED:
       case TransactionStatus.APPROVED:
-        this.logger.log(
-          `Handling approved transaction | Transaction ID: ${transactionId}`,
-        );
         await this.checkoutService.handleApprovedTransaction(transactionId);
         break;
-
       case TransactionStatus.CHARGED_BACK:
       case TransactionStatus.REFUNDED:
-        this.logger.log(
-          `Handling refunded transaction | Transaction ID: ${transactionId}`,
-        );
         await this.checkoutService.handleRefundedTransaction(transactionId);
         break;
-
       default:
-        this.logger.warn(
-          `Unhandled transaction status | Transaction ID: ${transactionId} | Status: ${status}`,
-        );
-        break;
+        this.logger.warn(`Unhandled status | Tx ${transactionId} | ${status}`);
     }
   }
 
   async refundFreeTransaction(transactionId: string, user: User) {
-    this.logger.log(
-      `Refund request received | Transaction ID: ${transactionId} | User ID: ${user.id}`,
-    );
-
     const tx = await this.transactionRepository.findById(transactionId);
 
     if (!tx) {
-      this.logger.warn(
-        `Transaction not found | Transaction ID: ${transactionId}`,
-      );
+      this.logger.warn(`Tx not found | ${transactionId}`);
       throw new NotFoundException('Transaction not found.');
     }
 
     if (tx.paymentMethod !== 'FREE' || tx.totalValue.gt(0)) {
-      this.logger.warn(
-        `Refund not allowed: Payment method is not FREE | Transaction ID: ${transactionId}`,
-      );
+      this.logger.warn(`Not FREE | Tx ${transactionId}`);
       throw new BadRequestException(
         'Refund not allowed for this payment method.',
       );
     }
 
-    this.logger.log(
-      `Processing refund for FREE transaction | Transaction ID: ${transactionId}`,
-    );
-
     await this.checkoutService.handleRefundedTransaction(transactionId);
+    this.logger.log(`FREE refund completed | Tx ${transactionId}`);
 
-    this.logger.log(
-      `Refund completed for FREE transaction | Transaction ID: ${transactionId}`,
-    );
-
-    return {
-      message: 'Free transaction refunded successfully.',
-    };
+    return { message: 'Free transaction refunded successfully.' };
   }
 }

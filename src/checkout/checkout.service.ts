@@ -62,7 +62,7 @@ export class CheckoutService {
     );
 
     if (!checkoutResult) {
-      this.logger.error('Failed to create checkout transaction.');
+      this.logger.error('Checkout creation failed');
       throw new InternalServerErrorException(
         'Error creating the checkout transaction.',
       );
@@ -74,7 +74,7 @@ export class CheckoutService {
     );
 
     if (!paymentResult) {
-      this.logger.error('Failed to process payment.');
+      this.logger.error('Payment processing failed');
       throw new InternalServerErrorException('Error processing the payment.');
     }
 
@@ -113,18 +113,19 @@ export class CheckoutService {
     await this.validateCategories(categoryCounts);
 
     const checkout = await this.checkoutRepository.performFreeCheckout(
-      team,
+      dto.team,
       user,
     );
 
     if (!checkout) {
-      this.logger.error('Failed to create free checkout transaction.');
+      this.logger.error('Free checkout failed');
       throw new InternalServerErrorException(
         'Error creating the free checkout transaction.',
       );
     }
 
     await this.handleApprovedTransaction(checkout.id);
+    this.logger.log(`FREE checkout completed | Tx ${checkout.id}`);
 
     return {
       transactionId: checkout.id,
@@ -133,19 +134,13 @@ export class CheckoutService {
   }
 
   async handleApprovedTransaction(transactionId: string) {
-    this.logger.log(
-      `Starting handleApprovedTransaction | Transaction ID: ${transactionId}`,
-    );
-
     const transaction =
       await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
         transactionId,
       );
 
     if (!transaction) {
-      this.logger.warn(
-        `Transaction not found | Transaction ID: ${transactionId}`,
-      );
+      this.logger.warn(`Tx not found (approve) | ${transactionId}`);
       throw new NotFoundException('Transaction not found.');
     }
 
@@ -158,38 +153,25 @@ export class CheckoutService {
       }
     }
 
-    this.logger.log(
-      `handleApprovedTransaction completed | Transaction ID: ${transactionId}`,
-    );
+    this.logger.log(`Tickets delivered | Tx ${transactionId}`);
   }
 
   async handleRefundedTransaction(transactionId: string) {
-    this.logger.log(
-      `Starting handleRefundedTransaction | Transaction ID: ${transactionId}`,
-    );
-
     const transaction =
       await this.checkoutRepository.getTransactionWithTicketsByPaymentId(
         transactionId,
       );
 
     if (!transaction) {
-      this.logger.warn(
-        `Transaction not found for refund | Transaction ID: ${transactionId}`,
-      );
+      this.logger.warn(`Tx not found (refund) | ${transactionId}`);
       throw new NotFoundException('Transaction not found.');
     }
 
-    if (transaction.refundedAt !== null) {
-      this.logger.warn(
-        `Transaction status does not allow refund | Transaction ID: ${transactionId} | Status: ${transaction.status}`,
-      );
+    if (transaction.refundedAt) {
+      this.logger.warn(`Already refunded | Tx ${transactionId}`);
       throw new BadRequestException('Transaction already canceled.');
     }
 
-    this.logger.log(
-      `Updating transaction status to REFUNDED | Transaction ID: ${transactionId}`,
-    );
     await this.checkoutRepository.updateRefundedStatus(
       transactionId,
       TransactionStatus.REFUNDED,
@@ -200,9 +182,7 @@ export class CheckoutService {
       await this.emailService.sendTicketRefund(ticket);
     }
 
-    this.logger.log(
-      `handleRefundedTransaction completed | Transaction ID: ${transactionId}`,
-    );
+    this.logger.log(`Refund processed | Tx ${transactionId}`);
   }
 
   async updatePaymentStatus(gatewayResponse: MercadoPagoPaymentResponse) {
