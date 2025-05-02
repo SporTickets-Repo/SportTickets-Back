@@ -11,26 +11,31 @@ export function generateRandomCode(length = 5): string {
 }
 
 export async function generatePdf(html: string): Promise<Buffer> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process',
-      '--no-zygote',
-    ],
-  });
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  await page.emulateMediaType('screen');
-  const pdfUint8Array = await page.pdf({
-    format: 'A3',
-    printBackground: true,
-  });
-  await browser.close();
-  return Buffer.from(pdfUint8Array);
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
+      ],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.emulateMediaType('screen');
+    const pdfUint8Array = await page.pdf({
+      format: 'A3',
+      printBackground: true,
+    });
+    await browser.close();
+    return Buffer.from(pdfUint8Array);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    return Buffer.from('');
+  }
 }
 
 export async function generateQrCodeBase64(content: string): Promise<string> {

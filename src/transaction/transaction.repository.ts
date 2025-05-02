@@ -22,6 +22,8 @@ export class TransactionRepository {
         totalValue: true,
         paymentProvider: true,
         paidAt: true,
+        refundedAt: true,
+        cancelledAt: true,
         tickets: {
           include: {
             ticketLot: {

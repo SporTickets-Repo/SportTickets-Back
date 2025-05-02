@@ -27,6 +27,16 @@ export class TicketController {
   }
 
   @Roles(Role.MASTER)
+  @Get('by-code/:code')
+  async getTicketByCode(@Param('code') code: string) {
+    if (!code) {
+      throw new Error('Code is required');
+    }
+
+    return this.ticketService.getTicketByCode(code);
+  }
+
+  @Roles(Role.MASTER)
   @Get('all-master/:userId')
   async getAllTicketsMaster(@Param('userId') userId: string) {
     return this.ticketService.getAllTicketsMaster(userId);

@@ -647,4 +647,115 @@ export class EmailService {
       [pdfAttachment],
     );
   }
+
+  async sendTicketRefund(ticket: TicketWithRelations) {
+    const {
+      user,
+      ticketLot,
+      category,
+      price,
+      ticketLot: { ticketType },
+    } = ticket;
+
+    const event = ticketLot.ticketType.event;
+    const formattedRefundDate = formatDate(new Date().toISOString());
+
+    const htmlBody = `
+  <div>
+    <h2 style="
+      color:${this.brandColors.secondary};
+      font-size:24px;margin-bottom:5px;text-align:center;">
+      Estorno Realizado
+    </h2>
+    <h3 style="
+      color:${this.brandColors.primary};
+      font-size:20px;margin-top:0;margin-bottom:25px;text-align:center;">
+      ${event.name}
+    </h3>
+
+    <p style="font-size:16px;line-height:1.6;margin-bottom:20px;">
+      Olá <strong>${user.name}</strong>,
+    </p>
+
+    <p style="
+      font-size:16px;line-height:1.6;margin-bottom:25px;
+      background-color:#fdf7f7;padding:15px;border-radius:6px;
+      border-left:4px solid ${this.brandColors.accent};">
+      Informamos que o valor do ingresso abaixo foi <strong>reembolsado com sucesso</strong>.
+    </p>
+
+    <div style="
+      background-color:#f8f9fa;border-radius:8px;padding:20px;
+      margin-bottom:25px;box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+      <h3 style="
+        color:${this.brandColors.secondary};font-size:18px;margin-top:0;
+        margin-bottom:15px;border-bottom:2px solid ${this.brandColors.primary};
+        padding-bottom:8px;">
+        Dados do Estorno
+      </h3>
+
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;width:40%;color:#666;">Valor estornado:</td>
+          <td style="padding:8px 0;font-weight:500;">R$ ${price.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;width:40%;color:#666;">Data do estorno:</td>
+          <td style="padding:8px 0;font-weight:500;">${formattedRefundDate}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin:25px 0;">
+      <h3 style="
+        color:${this.brandColors.secondary};font-size:18px;margin-top:0;
+        margin-bottom:12px;border-bottom:2px solid ${this.brandColors.primary};
+        padding-bottom:8px;">
+        Ingresso Estornado
+      </h3>
+      <ul style="padding-left:20px;margin:0;">
+        <li style="margin-bottom:6px;">
+          <strong>${ticketType.name}</strong> — 
+          Categoria: <strong>${category.title}</strong> — 
+          Código: <span style="font-family:monospace;">${ticket.code}</span>
+        </li>
+      </ul>
+    </div>
+
+    <p style="font-size:14px;line-height:1.6;color:#666;margin-top:30px;">
+      O valor pode levar até <strong>7 dias úteis</strong> para aparecer em sua fatura ou extrato,
+      dependendo da instituição financeira.
+    </p>
+
+    <div style="
+      margin-top:30px;text-align:center;padding:15px;
+      background:linear-gradient(90deg,
+      ${this.brandColors.primary}22 0%,${this.brandColors.secondary}22 100%);
+      border-radius:8px;">
+      <p style="
+        font-size:18px;font-weight:bold;margin:0;
+        color:${this.brandColors.secondary};">
+        Sentiremos sua falta, mas esperamos vê-lo(a) em breve! 🙌
+      </p>
+    </div>
+
+    <div style="
+      margin-top:30px;padding-top:20px;border-top:1px solid #eee;text-align:center;">
+      <p style="font-size:14px;margin:0;">Atenciosamente,</p>
+      <p style="
+        font-size:16px;font-weight:bold;margin:5px 0 0;
+        color:${this.brandColors.secondary};">
+        Equipe SporTickets
+      </p>
+    </div>
+  </div>
+  `;
+
+    return this.sendMail(
+      user.email,
+      user.name,
+      `Estorno do ingresso – ${event.name}`,
+      htmlBody,
+    );
+  }
 }
