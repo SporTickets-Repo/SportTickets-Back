@@ -17,6 +17,10 @@ export class TicketService {
     return this.ticketRepository.findAllTickets(userId);
   }
 
+  async getTicketByCode(code: string) {
+    return this.ticketRepository.findTicketByCode(code);
+  }
+
   async getAllTicketsMaster(userId: string) {
     return this.ticketRepository.findAllTickets(userId);
   }

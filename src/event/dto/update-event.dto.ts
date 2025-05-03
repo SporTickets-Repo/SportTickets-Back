@@ -140,6 +140,24 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
+    example: 'true',
+    description: 'Permitir contagem total de ingresso',
+    required: false,
+  })
+  allowFullTickets?: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    example: true,
+    description: 'Permitir contagem por tipo de ingressos',
+    required: false,
+  })
+  allowIndividualTickets?: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
     example: 'Informações adicionais sobre o evento',
     description: 'Informações adicionais sobre o evento',
     required: false,
