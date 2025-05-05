@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { BlobModule } from './blob/blob.module';
 import { BracketModule } from './bracket/bracket.module';
@@ -41,7 +43,7 @@ import { UserModule } from './user/user.module';
     ScheduleModule.forRoot(),
     CronJobsModule,
   ],
-  controllers: [],
-  providers: [PrismaService],
+  controllers: [AppController],
+  providers: [PrismaService, AppService],
 })
 export class AppModule {}
