@@ -390,24 +390,24 @@ export class CheckoutRepository {
     const [lotAfter, categoryAfter, couponAfter] = await Promise.all([
       this.prisma.ticketLot.findUnique({
         where: { id: ticket.ticketLotId },
-        select: { soldQuantity: true, name: true },
+        select: { soldQuantity: true, id: true },
       }),
       this.prisma.category.findUnique({
         where: { id: ticket.categoryId },
-        select: { soldQuantity: true, title: true },
+        select: { soldQuantity: true, id: true },
       }),
       ticket.couponId
         ? this.prisma.coupon.findUnique({
             where: { id: ticket.couponId },
-            select: { soldQuantity: true, name: true },
+            select: { soldQuantity: true, id: true },
           })
         : null,
     ]);
 
     this.logger.log(
-      `Ticket reembolsado com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.name} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.title} (${categoryAfter?.soldQuantity})${
+      `Ticket reembolsado com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.id} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.id} (${categoryAfter?.soldQuantity})${
         ticket.couponId
-          ? ` | Cupom: ${couponAfter?.name} (${couponAfter?.soldQuantity})`
+          ? ` | Cupom: ${couponAfter?.id} (${couponAfter?.soldQuantity})`
           : ''
       }`,
     );
