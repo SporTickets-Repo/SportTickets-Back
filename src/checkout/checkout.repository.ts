@@ -234,13 +234,6 @@ export class CheckoutRepository {
       data.paidAt = data.paidAt ?? new Date();
     }
 
-    if (
-      status === TransactionStatus.REFUNDED ||
-      status === TransactionStatus.CHARGED_BACK
-    ) {
-      data.refundedAt = data.refundedAt ?? new Date();
-    }
-
     if (status === TransactionStatus.CANCELLED) {
       data.cancelledAt = data.cancelledAt ?? new Date();
     }
