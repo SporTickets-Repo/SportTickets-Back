@@ -234,13 +234,6 @@ export class CheckoutRepository {
       data.paidAt = data.paidAt ?? new Date();
     }
 
-    if (
-      status === TransactionStatus.REFUNDED ||
-      status === TransactionStatus.CHARGED_BACK
-    ) {
-      data.refundedAt = data.refundedAt ?? new Date();
-    }
-
     if (status === TransactionStatus.CANCELLED) {
       data.cancelledAt = data.cancelledAt ?? new Date();
     }
@@ -310,23 +303,6 @@ export class CheckoutRepository {
       throw new BadRequestException('Ticket not found.');
     }
 
-    const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
-      this.prisma.ticketLot.findUnique({
-        where: { id: ticket.ticketLotId },
-        select: { soldQuantity: true },
-      }),
-      this.prisma.category.findUnique({
-        where: { id: ticket.categoryId },
-        select: { soldQuantity: true },
-      }),
-      ticket.couponId
-        ? this.prisma.coupon.findUnique({
-            where: { id: ticket.couponId },
-            select: { soldQuantity: true },
-          })
-        : null,
-    ]);
-
     await this.prisma.$transaction([
       this.prisma.ticket.update({
         where: { id: ticket.id },
@@ -353,24 +329,24 @@ export class CheckoutRepository {
     const [lotAfter, categoryAfter, couponAfter] = await Promise.all([
       this.prisma.ticketLot.findUnique({
         where: { id: ticket.ticketLotId },
-        select: { soldQuantity: true },
+        select: { soldQuantity: true, id: true },
       }),
       this.prisma.category.findUnique({
         where: { id: ticket.categoryId },
-        select: { soldQuantity: true },
+        select: { soldQuantity: true, id: true },
       }),
       ticket.couponId
         ? this.prisma.coupon.findUnique({
             where: { id: ticket.couponId },
-            select: { soldQuantity: true },
+            select: { soldQuantity: true, id: true },
           })
         : null,
     ]);
 
     this.logger.log(
-      `Ticket delivered successfully | Ticket ID: ${ticket.id} | Lot soldQuantity: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity} | Category soldQuantity: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}${
+      `Ticket entregue com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.id} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.id} (${categoryAfter?.soldQuantity})${
         ticket.couponId
-          ? ` | Coupon soldQuantity: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`
+          ? ` | Cupom: ${couponAfter?.id} (${couponAfter?.soldQuantity})`
           : ''
       }`,
     );
@@ -391,23 +367,6 @@ export class CheckoutRepository {
       this.logger.warn(`Ticket not found for refund | Ticket ID: ${ticketId}`);
       throw new BadRequestException('Ticket not found.');
     }
-
-    const [lotBefore, categoryBefore, couponBefore] = await Promise.all([
-      this.prisma.ticketLot.findUnique({
-        where: { id: ticket.ticketLotId },
-        select: { soldQuantity: true },
-      }),
-      this.prisma.category.findUnique({
-        where: { id: ticket.categoryId },
-        select: { soldQuantity: true },
-      }),
-      ticket.couponId
-        ? this.prisma.coupon.findUnique({
-            where: { id: ticket.couponId },
-            select: { soldQuantity: true },
-          })
-        : null,
-    ]);
 
     await this.prisma.$transaction([
       this.prisma.ticketLot.updateMany({
@@ -431,24 +390,24 @@ export class CheckoutRepository {
     const [lotAfter, categoryAfter, couponAfter] = await Promise.all([
       this.prisma.ticketLot.findUnique({
         where: { id: ticket.ticketLotId },
-        select: { soldQuantity: true },
+        select: { soldQuantity: true, id: true },
       }),
       this.prisma.category.findUnique({
         where: { id: ticket.categoryId },
-        select: { soldQuantity: true },
+        select: { soldQuantity: true, id: true },
       }),
       ticket.couponId
         ? this.prisma.coupon.findUnique({
             where: { id: ticket.couponId },
-            select: { soldQuantity: true },
+            select: { soldQuantity: true, id: true },
           })
         : null,
     ]);
 
     this.logger.log(
-      `Ticket refunded successfully | Ticket ID: ${ticket.id} | Lot soldQuantity: ${lotBefore?.soldQuantity} → ${lotAfter?.soldQuantity} | Category soldQuantity: ${categoryBefore?.soldQuantity} → ${categoryAfter?.soldQuantity}${
+      `Ticket reembolsado com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.id} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.id} (${categoryAfter?.soldQuantity})${
         ticket.couponId
-          ? ` | Coupon soldQuantity: ${couponBefore?.soldQuantity} → ${couponAfter?.soldQuantity}`
+          ? ` | Cupom: ${couponAfter?.id} (${couponAfter?.soldQuantity})`
           : ''
       }`,
     );
