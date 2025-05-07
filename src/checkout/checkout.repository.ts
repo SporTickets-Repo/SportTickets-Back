@@ -21,8 +21,8 @@ export class CheckoutRepository {
 
       const transaction = await tx.transaction.create({
         data: {
-          status: 'PENDING',
-          totalValue: totalValue,
+          status: TransactionStatus.PENDING,
+          totalValue,
           createdById: user.id,
           paymentMethod: dto.paymentData.paymentMethod,
         },
@@ -55,28 +55,17 @@ export class CheckoutRepository {
             const coupon = await tx.coupon.findUnique({
               where: { id: couponId },
             });
-
-            if (coupon && coupon.isActive) {
-              const discount = ticketPrice.mul(coupon.percentage);
-              ticketPrice = ticketPrice.minus(discount);
+            if (coupon?.isActive) {
+              ticketPrice = ticketPrice.minus(
+                ticketPrice.mul(coupon.percentage),
+              );
             }
           }
 
-          let code: string | undefined;
-          let isUnique = false;
-
-          while (!isUnique) {
-            const generated = generateRandomCode();
-
-            const existing = await tx.ticket.findUnique({
-              where: { code: generated },
-            });
-
-            if (!existing) {
-              code = generated;
-              isUnique = true;
-            }
-          }
+          let code: string;
+          do {
+            code = generateRandomCode();
+          } while (await tx.ticket.findUnique({ where: { code } }));
 
           const ticket = await tx.ticket.create({
             data: {
@@ -84,15 +73,15 @@ export class CheckoutRepository {
               transactionId: transaction.id,
               teamId: teamCreated.id,
               ticketLotId: lot.id,
-              categoryId: player.categoryId,
+              ...(player.categoryId && { categoryId: player.categoryId }),
               price: ticketPrice,
-              code: code!,
+              code,
               ...(couponId && { couponId }),
             },
           });
 
           await tx.personalizedFieldAnswer.createMany({
-            data: player.personalFields.map((field) => ({
+            data: (player.personalFields ?? []).map((field) => ({
               ticketId: ticket.id,
               personalizedFieldId: field.personalizedFieldId,
               answer: field.answer,
@@ -109,7 +98,7 @@ export class CheckoutRepository {
           where: { id: teams[0].ticketTypeId },
           include: { event: true },
         });
-        if (ticketType && ticketType.event && ticketType.event.eventFee) {
+        if (ticketType?.event?.eventFee) {
           eventFeePercentage = new Decimal(ticketType.event.eventFee);
         }
       }
@@ -122,21 +111,15 @@ export class CheckoutRepository {
         data: { totalValue: finalTotal },
       });
 
-      const createdTransaction = await tx.transaction.findUnique({
+      return tx.transaction.findUnique({
         where: { id: transaction.id },
         include: {
           createdBy: true,
           tickets: {
             include: {
-              ticketLot: {
-                include: {
-                  ticketType: true,
-                },
-              },
+              ticketLot: { include: { ticketType: true } },
               personalizedFieldAnswers: {
-                include: {
-                  personalizedField: true,
-                },
+                include: { personalizedField: true },
               },
               user: true,
               category: true,
@@ -145,8 +128,6 @@ export class CheckoutRepository {
           },
         },
       });
-
-      return createdTransaction;
     });
   }
 
@@ -196,14 +177,14 @@ export class CheckoutRepository {
             transactionId: transaction.id,
             teamId: teamCreated.id,
             ticketLotId: lot.id,
-            categoryId: player.categoryId,
+            ...(player.categoryId && { categoryId: player.categoryId }),
             price: new Decimal(0),
             code,
           },
         });
 
         await tx.personalizedFieldAnswer.createMany({
-          data: player.personalFields.map((f) => ({
+          data: (player.personalFields ?? []).map((f) => ({
             ticketId: ticket.id,
             personalizedFieldId: f.personalizedFieldId,
             answer: f.answer,
@@ -244,7 +225,7 @@ export class CheckoutRepository {
     });
   }
 
-  async getTransactionWithTicketsByPaymentId(transactionId: string) {
+  getTransactionWithTicketsByPaymentId(transactionId: string) {
     return this.prisma.transaction.findUnique({
       where: { id: transactionId },
       include: {
@@ -255,11 +236,7 @@ export class CheckoutRepository {
               include: {
                 ticketType: {
                   include: {
-                    event: {
-                      include: {
-                        address: true,
-                      },
-                    },
+                    event: { include: { address: true } },
                     personalizedFields: true,
                   },
                 },
@@ -267,18 +244,10 @@ export class CheckoutRepository {
             },
             category: true,
             team: {
-              include: {
-                tickets: {
-                  include: {
-                    user: true,
-                  },
-                },
-              },
+              include: { tickets: { include: { user: true } } },
             },
             coupon: true,
-            personalizedFieldAnswers: {
-              include: { personalizedField: true },
-            },
+            personalizedFieldAnswers: { include: { personalizedField: true } },
           },
         },
       },
@@ -288,12 +257,7 @@ export class CheckoutRepository {
   async markTicketAsDeliveredAndUpdateSoldQuantity(ticketId: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
-      select: {
-        id: true,
-        ticketLotId: true,
-        categoryId: true,
-        couponId: true,
-      },
+      select: { id: true, ticketLotId: true, categoryId: true, couponId: true },
     });
 
     if (!ticket) {
@@ -312,10 +276,14 @@ export class CheckoutRepository {
         where: { id: ticket.ticketLotId },
         data: { soldQuantity: { increment: 1 } },
       }),
-      this.prisma.category.update({
-        where: { id: ticket.categoryId },
-        data: { soldQuantity: { increment: 1 } },
-      }),
+      ...(ticket.categoryId
+        ? [
+            this.prisma.category.update({
+              where: { id: ticket.categoryId },
+              data: { soldQuantity: { increment: 1 } },
+            }),
+          ]
+        : []),
       ...(ticket.couponId
         ? [
             this.prisma.coupon.update({
@@ -331,10 +299,12 @@ export class CheckoutRepository {
         where: { id: ticket.ticketLotId },
         select: { soldQuantity: true, id: true },
       }),
-      this.prisma.category.findUnique({
-        where: { id: ticket.categoryId },
-        select: { soldQuantity: true, id: true },
-      }),
+      ticket.categoryId
+        ? this.prisma.category.findUnique({
+            where: { id: ticket.categoryId },
+            select: { soldQuantity: true, id: true },
+          })
+        : null,
       ticket.couponId
         ? this.prisma.coupon.findUnique({
             where: { id: ticket.couponId },
@@ -344,23 +314,18 @@ export class CheckoutRepository {
     ]);
 
     this.logger.log(
-      `Ticket entregue com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.id} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.id} (${categoryAfter?.soldQuantity})${
-        ticket.couponId
-          ? ` | Cupom: ${couponAfter?.id} (${couponAfter?.soldQuantity})`
+      `Ticket entregue | Ticket ${ticket.id} | Lote ${lotAfter?.id} (${lotAfter?.soldQuantity})${
+        categoryAfter
+          ? ` | Cat ${categoryAfter.id} (${categoryAfter.soldQuantity})`
           : ''
-      }`,
+      }${couponAfter ? ` | Cupom ${couponAfter.id} (${couponAfter.soldQuantity})` : ''}`,
     );
   }
 
   async decreaseSoldQuantity(ticketId: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
-      select: {
-        id: true,
-        ticketLotId: true,
-        categoryId: true,
-        couponId: true,
-      },
+      select: { id: true, ticketLotId: true, categoryId: true, couponId: true },
     });
 
     if (!ticket) {
@@ -373,10 +338,14 @@ export class CheckoutRepository {
         where: { id: ticket.ticketLotId, soldQuantity: { gt: 0 } },
         data: { soldQuantity: { increment: -1 } },
       }),
-      this.prisma.category.updateMany({
-        where: { id: ticket.categoryId, soldQuantity: { gt: 0 } },
-        data: { soldQuantity: { increment: -1 } },
-      }),
+      ...(ticket.categoryId
+        ? [
+            this.prisma.category.updateMany({
+              where: { id: ticket.categoryId, soldQuantity: { gt: 0 } },
+              data: { soldQuantity: { increment: -1 } },
+            }),
+          ]
+        : []),
       ...(ticket.couponId
         ? [
             this.prisma.coupon.updateMany({
@@ -392,10 +361,12 @@ export class CheckoutRepository {
         where: { id: ticket.ticketLotId },
         select: { soldQuantity: true, id: true },
       }),
-      this.prisma.category.findUnique({
-        where: { id: ticket.categoryId },
-        select: { soldQuantity: true, id: true },
-      }),
+      ticket.categoryId
+        ? this.prisma.category.findUnique({
+            where: { id: ticket.categoryId },
+            select: { soldQuantity: true, id: true },
+          })
+        : null,
       ticket.couponId
         ? this.prisma.coupon.findUnique({
             where: { id: ticket.couponId },
@@ -405,20 +376,17 @@ export class CheckoutRepository {
     ]);
 
     this.logger.log(
-      `Ticket reembolsado com sucesso | Ticket ID: ${ticket.id} | Lote: ${lotAfter?.id} (${lotAfter?.soldQuantity}) | Categoria: ${categoryAfter?.id} (${categoryAfter?.soldQuantity})${
-        ticket.couponId
-          ? ` | Cupom: ${couponAfter?.id} (${couponAfter?.soldQuantity})`
+      `Ticket reembolsado | Ticket ${ticket.id} | Lote ${lotAfter?.id} (${lotAfter?.soldQuantity})${
+        categoryAfter
+          ? ` | Cat ${categoryAfter.id} (${categoryAfter.soldQuantity})`
           : ''
-      }`,
+      }${couponAfter ? ` | Cupom ${couponAfter.id} (${couponAfter.soldQuantity})` : ''}`,
     );
   }
 
   findLotsByTicketTypeIds(ids: string[]) {
     return this.prisma.ticketLot.findMany({
-      where: {
-        ticketTypeId: { in: ids },
-        deletedAt: null,
-      },
+      where: { ticketTypeId: { in: ids }, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -432,12 +400,7 @@ export class CheckoutRepository {
   findCategoriesByIds(ids: string[]) {
     return this.prisma.category.findMany({
       where: { id: { in: ids }, deletedAt: null },
-      select: {
-        id: true,
-        title: true,
-        quantity: true,
-        soldQuantity: true,
-      },
+      select: { id: true, title: true, quantity: true, soldQuantity: true },
     });
   }
 
@@ -455,7 +418,7 @@ export class CheckoutRepository {
     });
   }
 
-  async updateRefundedStatus(transactionId: string, status: TransactionStatus) {
+  updateRefundedStatus(transactionId: string, status: TransactionStatus) {
     return this.prisma.transaction.update({
       where: { id: transactionId },
       data: { status, refundedAt: new Date() },

@@ -38,10 +38,12 @@ export class CheckoutService {
       );
 
       for (const player of team.player) {
-        categoryCounts.set(
-          player.categoryId,
-          (categoryCounts.get(player.categoryId) || 0) + 1,
-        );
+        if (player.categoryId) {
+          categoryCounts.set(
+            player.categoryId,
+            (categoryCounts.get(player.categoryId) || 0) + 1,
+          );
+        }
       }
 
       if (dto.couponId) {
@@ -90,12 +92,14 @@ export class CheckoutService {
     const playerCount = team.player.length;
     const categoryCounts = new Map<string, number>();
 
-    team.player.forEach((p) =>
-      categoryCounts.set(
-        p.categoryId,
-        (categoryCounts.get(p.categoryId) || 0) + 1,
-      ),
-    );
+    for (const player of team.player) {
+      if (player.categoryId) {
+        categoryCounts.set(
+          player.categoryId,
+          (categoryCounts.get(player.categoryId) || 0) + 1,
+        );
+      }
+    }
 
     const [lot] = await this.checkoutRepository.findLotsByTicketTypeIds([
       team.ticketTypeId,
@@ -110,7 +114,9 @@ export class CheckoutService {
       );
     }
 
-    await this.validateCategories(categoryCounts);
+    if (categoryCounts.size > 0) {
+      await this.validateCategories(categoryCounts);
+    }
 
     const checkout = await this.checkoutRepository.performFreeCheckout(
       team,
@@ -169,7 +175,7 @@ export class CheckoutService {
 
     if (transaction.refundedAt) {
       this.logger.warn(`Already refunded | Tx ${transactionId}`);
-      throw new BadRequestException('Transaction already canceled.');
+      throw new BadRequestException('Transaction already refunded.');
     }
 
     await this.checkoutRepository.updateRefundedStatus(
@@ -211,7 +217,9 @@ export class CheckoutService {
       }
     }
 
-    await this.validateCategories(categoryCounts);
+    if (categoryCounts.size > 0) {
+      await this.validateCategories(categoryCounts);
+    }
 
     if (couponId) {
       const coupon = await this.checkoutRepository.findCouponById(couponId);
@@ -235,6 +243,8 @@ export class CheckoutService {
   }
 
   private async validateCategories(categoryCounts: Map<string, number>) {
+    if (categoryCounts.size === 0) return;
+
     const categories = await this.checkoutRepository.findCategoriesByIds([
       ...categoryCounts.keys(),
     ]);

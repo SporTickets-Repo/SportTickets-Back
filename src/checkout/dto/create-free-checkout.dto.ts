@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 
 class PersonalizedFieldDto {
   @IsString()
@@ -14,12 +20,14 @@ class PlayerDto {
   userId: string;
 
   @IsUUID()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PersonalizedFieldDto)
-  personalFields: PersonalizedFieldDto[];
+  @IsOptional()
+  personalFields?: PersonalizedFieldDto[];
 }
 
 export class TeamDto {

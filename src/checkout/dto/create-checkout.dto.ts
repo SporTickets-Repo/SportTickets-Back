@@ -23,12 +23,14 @@ class PlayerDto {
   userId: string;
 
   @IsUUID()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PersonalizedFieldDto)
-  personalFields: PersonalizedFieldDto[];
+  @IsOptional()
+  personalFields?: PersonalizedFieldDto[];
 }
 
 class TeamDto {
