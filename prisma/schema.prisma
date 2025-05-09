@@ -325,6 +325,7 @@ enum PaymentMethod {
   PIX
   CREDIT_CARD
   BOLETO
+  FREE
 }
 
 enum PaymentProvider {
