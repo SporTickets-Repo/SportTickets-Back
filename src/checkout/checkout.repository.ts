@@ -216,7 +216,13 @@ export class CheckoutRepository {
   }
 
   async updateCheckoutTransaction(gateway: MercadoPagoPaymentResponse) {
-    const status = mapStatus(gateway.status);
+    const refundedAmount = gateway.transaction_amount_refunded || 0;
+
+    let status = mapStatus(gateway.status);
+
+    if (refundedAmount > 0) {
+      status = TransactionStatus.REFUNDED;
+    }
 
     const data: Prisma.TransactionUpdateInput = {
       externalPaymentId: gateway.id.toString(),
