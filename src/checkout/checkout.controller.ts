@@ -15,8 +15,7 @@ export class CheckoutController {
     @Body() dto: CreateFreeCheckoutDto,
     @Request() req: { user: User },
   ) {
-    const user = req.user;
-    return this.checkoutService.createFreeOrder(dto, user);
+    return this.checkoutService.createFreeOrder(dto, req.user);
   }
 
   @Post()
@@ -24,7 +23,6 @@ export class CheckoutController {
     @Body() dto: CreateCheckoutDto,
     @Request() req: { user: User },
   ) {
-    const user = req.user;
-    return this.checkoutService.createOrder(dto, user);
+    return this.checkoutService.createOrder(dto, req.user);
   }
 }

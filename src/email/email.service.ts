@@ -363,7 +363,7 @@ export class EmailService {
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="padding: 8px 0; width: 40%; color: #666;">Categoria:</td>
-            <td style="padding: 8px 0; font-weight: 500;">${category.title}</td>
+            <td style="padding: 8px 0; font-weight: 500;">${category?.title ?? 'Sem categoria'}</td>
           </tr>
           <tr>
             <td style="padding: 8px 0; width: 40%; color: #666;">Lote:</td>
@@ -591,7 +591,7 @@ export class EmailService {
         <h3>Detalhes do Ingresso</h3>
         <div class="detail-row">
           <div class="detail-label">Categoria:</div>
-          <div class="detail-value">${category.title}</div>
+          <div class="detail-value">${category?.title ?? 'Sem categoria'}</div>
         </div>
         <div class="detail-row">
           <div class="detail-label">Lote:</div>
@@ -716,7 +716,7 @@ export class EmailService {
       <ul style="padding-left:20px;margin:0;">
         <li style="margin-bottom:6px;">
           <strong>${ticketType.name}</strong> — 
-          Categoria: <strong>${category.title}</strong> — 
+          Categoria: <strong>${category?.title ?? 'Sem categoria'}</strong> — 
           Código: <span style="font-family:monospace;">${ticket.code}</span>
         </li>
       </ul>

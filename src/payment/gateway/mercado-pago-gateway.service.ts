@@ -164,8 +164,8 @@ export class MercadoPagoGateway implements PaymentGateway {
     const items = tickets.map((ticket: any) => ({
       id: ticket.id,
       title: ticket.ticketLot.name,
-      description: ticket.category.title,
-      category_id: ticket.category.id,
+      description: ticket.category?.title || 'Sem categoria',
+      category_id: ticket.category?.id || 'Sem categoria',
       quantity: 1,
       unit_price: Number(ticket.price),
       type: 'ticket',

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionStatus, User } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
@@ -38,10 +39,12 @@ export class CheckoutService {
       );
 
       for (const player of team.player) {
-        categoryCounts.set(
-          player.categoryId,
-          (categoryCounts.get(player.categoryId) || 0) + 1,
-        );
+        if (player.categoryId) {
+          categoryCounts.set(
+            player.categoryId,
+            (categoryCounts.get(player.categoryId) || 0) + 1,
+          );
+        }
       }
 
       if (dto.couponId) {
@@ -60,7 +63,6 @@ export class CheckoutService {
       dto,
       user,
     );
-
     if (!checkoutResult) {
       this.logger.error('Checkout creation failed');
       throw new InternalServerErrorException(
@@ -68,11 +70,21 @@ export class CheckoutService {
       );
     }
 
+    if ((checkoutResult.totalValue as Decimal).equals(0)) {
+      await this.checkoutRepository.markTransactionAsFree(checkoutResult.id);
+      await this.handleApprovedTransaction(checkoutResult.id);
+
+      this.logger.log(`FREE checkout (100%) | Tx ${checkoutResult.id}`);
+      return {
+        transactionId: checkoutResult.id,
+        message: 'Checkout completed successfully.',
+      };
+    }
+
     const paymentResult = await this.paymentService.processPayment(
       checkoutResult,
       dto,
     );
-
     if (!paymentResult) {
       this.logger.error('Payment processing failed');
       throw new InternalServerErrorException('Error processing the payment.');
@@ -86,21 +98,21 @@ export class CheckoutService {
 
   async createFreeOrder(dto: CreateFreeCheckoutDto, user: User) {
     const { team } = dto;
-
     const playerCount = team.player.length;
     const categoryCounts = new Map<string, number>();
 
-    team.player.forEach((p) =>
-      categoryCounts.set(
-        p.categoryId,
-        (categoryCounts.get(p.categoryId) || 0) + 1,
-      ),
-    );
+    for (const player of team.player) {
+      if (player.categoryId) {
+        categoryCounts.set(
+          player.categoryId,
+          (categoryCounts.get(player.categoryId) || 0) + 1,
+        );
+      }
+    }
 
     const [lot] = await this.checkoutRepository.findLotsByTicketTypeIds([
       team.ticketTypeId,
     ]);
-
     if (!lot || playerCount > lot.quantity - lot.soldQuantity) {
       this.logger.warn(
         `Not enough tickets available in lot "${lot?.name ?? ''}"`,
@@ -110,13 +122,14 @@ export class CheckoutService {
       );
     }
 
-    await this.validateCategories(categoryCounts);
+    if (categoryCounts.size > 0) {
+      await this.validateCategories(categoryCounts);
+    }
 
     const checkout = await this.checkoutRepository.performFreeCheckout(
       team,
       user,
     );
-
     if (!checkout) {
       this.logger.error('Free checkout failed');
       throw new InternalServerErrorException(
@@ -169,7 +182,7 @@ export class CheckoutService {
 
     if (transaction.refundedAt) {
       this.logger.warn(`Already refunded | Tx ${transactionId}`);
-      throw new BadRequestException('Transaction already canceled.');
+      throw new BadRequestException('Transaction already refunded.');
     }
 
     await this.checkoutRepository.updateRefundedStatus(
@@ -204,27 +217,26 @@ export class CheckoutService {
       const available = lot.quantity - lot.soldQuantity;
 
       if (requested > available) {
-        this.logger.warn(`Not enough tickets available in lot "${lot.name}"`);
+        this.logger.warn(`Not enough tickets in lot "${lot.name}"`);
         throw new BadRequestException(
           `The lot "${lot.name}" does not have enough tickets available.`,
         );
       }
     }
 
-    await this.validateCategories(categoryCounts);
+    if (categoryCounts.size > 0) {
+      await this.validateCategories(categoryCounts);
+    }
 
     if (couponId) {
       const coupon = await this.checkoutRepository.findCouponById(couponId);
-
       if (!coupon || coupon.deletedAt || !coupon.isActive) {
         this.logger.warn(
           `Invalid or inactive coupon used | Coupon ID: ${couponId}`,
         );
         throw new BadRequestException('Invalid or inactive coupon.');
       }
-
       const available = coupon.quantity - coupon.soldQuantity;
-
       if (couponCount! > available) {
         this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
         throw new BadRequestException(
@@ -235,6 +247,8 @@ export class CheckoutService {
   }
 
   private async validateCategories(categoryCounts: Map<string, number>) {
+    if (categoryCounts.size === 0) return;
+
     const categories = await this.checkoutRepository.findCategoriesByIds([
       ...categoryCounts.keys(),
     ]);
