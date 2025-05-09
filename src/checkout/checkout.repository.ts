@@ -158,14 +158,12 @@ export class CheckoutRepository {
           },
           orderBy: { startDate: 'asc' },
         });
-
         if (!lot) {
           throw new BadRequestException(
             'Nenhum lote ativo disponível para este tipo de ingresso.',
           );
         }
 
-        /* gera código único */
         let code: string;
         do {
           code = generateRandomCode();
@@ -196,6 +194,18 @@ export class CheckoutRepository {
     });
   }
 
+  markTransactionAsFree(id: string) {
+    return this.prisma.transaction.update({
+      where: { id },
+      data: {
+        status: TransactionStatus.APPROVED,
+        paymentMethod: 'FREE',
+        externalStatus: 'free',
+        paidAt: new Date(),
+      },
+    });
+  }
+
   async updateCheckoutTransaction(gateway: MercadoPagoPaymentResponse) {
     const status = mapStatus(gateway.status);
 
@@ -214,7 +224,6 @@ export class CheckoutRepository {
     ) {
       data.paidAt = data.paidAt ?? new Date();
     }
-
     if (status === TransactionStatus.CANCELLED) {
       data.cancelledAt = data.cancelledAt ?? new Date();
     }

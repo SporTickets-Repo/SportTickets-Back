@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionStatus, User } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { EmailService } from 'src/email/email.service';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
@@ -62,7 +63,6 @@ export class CheckoutService {
       dto,
       user,
     );
-
     if (!checkoutResult) {
       this.logger.error('Checkout creation failed');
       throw new InternalServerErrorException(
@@ -70,11 +70,21 @@ export class CheckoutService {
       );
     }
 
+    if ((checkoutResult.totalValue as Decimal).equals(0)) {
+      await this.checkoutRepository.markTransactionAsFree(checkoutResult.id);
+      await this.handleApprovedTransaction(checkoutResult.id);
+
+      this.logger.log(`FREE checkout (100%) | Tx ${checkoutResult.id}`);
+      return {
+        transactionId: checkoutResult.id,
+        message: 'Checkout completed successfully.',
+      };
+    }
+
     const paymentResult = await this.paymentService.processPayment(
       checkoutResult,
       dto,
     );
-
     if (!paymentResult) {
       this.logger.error('Payment processing failed');
       throw new InternalServerErrorException('Error processing the payment.');
@@ -88,7 +98,6 @@ export class CheckoutService {
 
   async createFreeOrder(dto: CreateFreeCheckoutDto, user: User) {
     const { team } = dto;
-
     const playerCount = team.player.length;
     const categoryCounts = new Map<string, number>();
 
@@ -104,7 +113,6 @@ export class CheckoutService {
     const [lot] = await this.checkoutRepository.findLotsByTicketTypeIds([
       team.ticketTypeId,
     ]);
-
     if (!lot || playerCount > lot.quantity - lot.soldQuantity) {
       this.logger.warn(
         `Not enough tickets available in lot "${lot?.name ?? ''}"`,
@@ -122,7 +130,6 @@ export class CheckoutService {
       team,
       user,
     );
-
     if (!checkout) {
       this.logger.error('Free checkout failed');
       throw new InternalServerErrorException(
@@ -210,7 +217,7 @@ export class CheckoutService {
       const available = lot.quantity - lot.soldQuantity;
 
       if (requested > available) {
-        this.logger.warn(`Not enough tickets available in lot "${lot.name}"`);
+        this.logger.warn(`Not enough tickets in lot "${lot.name}"`);
         throw new BadRequestException(
           `The lot "${lot.name}" does not have enough tickets available.`,
         );
@@ -223,16 +230,13 @@ export class CheckoutService {
 
     if (couponId) {
       const coupon = await this.checkoutRepository.findCouponById(couponId);
-
       if (!coupon || coupon.deletedAt || !coupon.isActive) {
         this.logger.warn(
           `Invalid or inactive coupon used | Coupon ID: ${couponId}`,
         );
         throw new BadRequestException('Invalid or inactive coupon.');
       }
-
       const available = coupon.quantity - coupon.soldQuantity;
-
       if (couponCount! > available) {
         this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
         throw new BadRequestException(
