@@ -117,7 +117,16 @@ export class CheckoutRepository {
           createdBy: true,
           tickets: {
             include: {
-              ticketLot: { include: { ticketType: true } },
+              ticketLot: {
+                include: {
+                  ticketType: {
+                    include: {
+                      event: { include: { address: true } },
+                      personalizedFields: true,
+                    },
+                  },
+                },
+              },
               personalizedFieldAnswers: {
                 include: { personalizedField: true },
               },
