@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventStatus, Prisma } from '@prisma/client';
+import Decimal from 'decimal.js';
 import { BlobService } from 'src/blob/blob.service';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -237,9 +238,12 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
+    const preciseFee = new Decimal(eventFee).toDecimalPlaces(2);
+
     const updatedEvent = await this.eventRepository.updateEvent(eventId, {
-      eventFee,
+      eventFee: preciseFee,
     });
+
     return updatedEvent;
   }
 }
