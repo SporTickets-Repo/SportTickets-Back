@@ -23,7 +23,8 @@ export class MercadoPagoGateway implements PaymentGateway {
       createCheckoutDto,
     );
     const transactionId = checkoutResult.id;
-    const totalValue = Number(checkoutResult.totalValue);
+    const totalValue =
+      Math.round(Number(checkoutResult.totalValue) * 100) / 100;
     const notificationUrl = `${this.configService.backendUrl}/payment/webhook/mercado-pago`;
 
     switch (paymentData.paymentMethodId) {
@@ -167,7 +168,7 @@ export class MercadoPagoGateway implements PaymentGateway {
       description: ticket.category?.title || 'Sem categoria',
       category_id: ticket.category?.id || 'Sem categoria',
       quantity: 1,
-      unit_price: Number(ticket.price),
+      unit_price: Math.round(Number(ticket.price) * 100) / 100,
       type: 'ticket',
       event_date: ticket.ticketLot.startDate,
       warranty: false,
@@ -180,7 +181,7 @@ export class MercadoPagoGateway implements PaymentGateway {
 
     const eventFee = tickets[0]?.ticketLot?.ticketType?.event?.eventFee;
     if (eventFee && Number(eventFee) > 0) {
-      const feeValue = ticketTotal * Number(eventFee);
+      const feeValue = Math.round(ticketTotal * Number(eventFee) * 100) / 100;
       items.push({
         id: 'eventFee',
         title: `Taxa do Evento ${tickets[0]?.ticketLot?.ticketType?.event?.name}`,
