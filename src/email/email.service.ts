@@ -3,6 +3,8 @@ import type { TicketWithRelations } from 'src/checkout/dto/ticket-with-relations
 import { AppConfigService } from 'src/config/config.service';
 import { formatDate } from 'src/utils/format';
 import { generatePdf, generateQrCodeBase64 } from 'src/utils/generate';
+import { sanitizerHtml } from 'src/utils/html-sanitizer';
+import { stripHtml } from 'src/utils/stripHtml';
 import { SendMailClient } from 'zeptomail';
 
 @Injectable()
@@ -221,7 +223,10 @@ export class EmailService {
     return this.sendMail(to, name, 'Recuperação de senha', htmlBody);
   }
 
-  async sendTicketConfirmation(ticket: TicketWithRelations) {
+  async sendTicketConfirmation(
+    ticket: TicketWithRelations,
+    customText: string | null = null,
+  ) {
     const {
       user,
       ticketLot,
@@ -234,6 +239,8 @@ export class EmailService {
 
     const ticketType = ticketLot.ticketType;
     const event = ticketType.event;
+
+    const safeCustomHtml = customText ? sanitizerHtml(customText) : '';
 
     const formattedStartDate = event.startDate
       ? formatDate(event.startDate.toString())
@@ -331,6 +338,84 @@ export class EmailService {
         margin-bottom: 20px;">
         Olá <strong>${user.name}</strong>,
       </p>
+
+       ${
+         safeCustomHtml && stripHtml(safeCustomHtml).length > 0
+           ? `<div style="
+    font-size: 16px; 
+    line-height: 1.6; 
+    margin-bottom: 25px;
+    background-color: #f0f9ff;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid ${this.brandColors.primary};" class="custom-text-container">
+      <style>
+        .custom-text-container h1 {
+          color: ${this.brandColors.secondary};
+          font-size: 24px;
+          margin-top: 0;
+          margin-bottom: 16px;
+          border-bottom: 2px solid ${this.brandColors.primary};
+          padding-bottom: 8px;
+        }
+        .custom-text-container h2 {
+          color: ${this.brandColors.secondary};
+          font-size: 20px;
+          margin-top: 20px;
+          margin-bottom: 12px;
+        }
+        .custom-text-container h3 {
+          color: ${this.brandColors.secondary};
+          font-size: 18px;
+          margin-top: 16px;
+          margin-bottom: 10px;
+        }
+        .custom-text-container p {
+          margin-bottom: 16px;
+          line-height: 1.6;
+        }
+        .custom-text-container a {
+          color: ${this.brandColors.primary};
+          text-decoration: none;
+          font-weight: 500;
+        }
+        .custom-text-container a:hover {
+          text-decoration: underline;
+        }
+        .custom-text-container ul, .custom-text-container ol {
+          padding-left: 20px;
+          margin-bottom: 16px;
+        }
+        .custom-text-container li {
+          margin-bottom: 8px;
+        }
+        .custom-text-container strong {
+          color: ${this.brandColors.secondary};
+          font-weight: 600;
+        }
+        .custom-text-container em {
+          font-style: italic;
+        }
+        .custom-text-container blockquote {
+          border-left: 4px solid ${this.brandColors.accent};
+          padding-left: 16px;
+          margin-left: 0;
+          color: #666;
+          font-style: italic;
+        }
+        .custom-text-container code {
+          font-family: monospace;
+          background-color: #f1f1f1;
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-size: 14px;
+        }
+      </style>
+      ${safeCustomHtml}
+    </div>`
+           : ''
+       }
+
       
       <p style="
         font-size: 16px; 
