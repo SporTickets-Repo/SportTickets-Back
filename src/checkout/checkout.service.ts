@@ -162,8 +162,6 @@ export class CheckoutService {
         transaction.tickets[0].ticketLot.ticketTypeId,
       );
 
-    console.log(customText);
-
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
       if (!ticket.deliveredAt) {
         await this.emailService.sendTicketConfirmation(ticket, customText);
