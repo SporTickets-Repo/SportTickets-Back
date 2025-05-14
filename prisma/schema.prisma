@@ -69,6 +69,33 @@ model Event {
   eventDashboardAccess EventDashboardAccess[]
   bracket              Bracket[]
   ranking              Ranking[]
+  terms                Term[]
+}
+
+model Term {
+  id           String  @id @default(uuid()) @db.Uuid
+  eventId      String  @db.Uuid
+  title        String
+  isObligatory Boolean
+  fileUrl      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event                  Event                    @relation(fields: [eventId], references: [id])
+  TermTicketConfirmation TermTicketConfirmation[]
+}
+
+model TermTicketConfirmation {
+  id          String   @id @default(uuid()) @db.Uuid
+  termId      String   @db.Uuid
+  ticketId    String   @db.Uuid
+  confirmedAt DateTime @default(now())
+
+  term   Term   @relation(fields: [termId], references: [id])
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@unique([termId, ticketId])
 }
 
 model Transaction {
@@ -134,6 +161,7 @@ model Ticket {
   personalizedFieldAnswers PersonalizedFieldAnswer[]
   teamId                   String?                   @db.Uuid
   team                     Team?                     @relation(fields: [teamId], references: [id])
+  TermTicketConfirmation   TermTicketConfirmation[]
 }
 
 model Team {
