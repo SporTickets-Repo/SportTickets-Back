@@ -32,7 +32,7 @@ export class EventTermsController {
     @Req() req: { user: User },
     @UploadedFiles() uploaded: { files?: Express.Multer.File[] } | undefined,
     @Body('terms') termsRaw: string,
-    @Body('fileIndices') fileIndicesRaw: string,
+    @Body('fileIndices') fileIndicesRaw: string | string[],
   ) {
     let terms: UpsertTermDto[];
 
@@ -66,15 +66,21 @@ export class EventTermsController {
 
     if (files.length > 0) {
       try {
-        const parsed = JSON.parse(fileIndicesRaw);
-        if (Array.isArray(parsed)) {
-          fileIndices = parsed.filter((i) => typeof i === 'number');
-        } else if (typeof parsed === 'number') {
-          fileIndices = [parsed];
+        if (Array.isArray(fileIndicesRaw)) {
+          fileIndices = fileIndicesRaw
+            .map((val) => Number(val))
+            .filter((val) => !isNaN(val));
+        } else {
+          const parsed = JSON.parse(fileIndicesRaw);
+          if (Array.isArray(parsed)) {
+            fileIndices = parsed.filter((i) => typeof i === 'number');
+          } else if (typeof parsed === 'number') {
+            fileIndices = [parsed];
+          }
         }
       } catch {
         throw new BadRequestException(
-          'The "fileIndices" field must be a valid JSON containing a number or array of numbers.',
+          'The "fileIndices" field must be a valid JSON array or list of numbers.',
         );
       }
     }
@@ -86,10 +92,9 @@ export class EventTermsController {
       );
     }
 
-    const userId = req.user.id;
     return this.service.syncEventTerms(
       eventId,
-      userId,
+      req.user,
       { terms },
       files,
       fileIndices,

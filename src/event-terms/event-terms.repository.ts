@@ -70,4 +70,14 @@ export class EventTermsRepository {
       ]);
     });
   }
+
+  getEventWithAccess(eventId: string) {
+    return this.prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        user: true,
+        eventDashboardAccess: true,
+      },
+    });
+  }
 }

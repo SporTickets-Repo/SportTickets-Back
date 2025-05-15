@@ -1,5 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { Prisma, Role, User } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { SyncEventTermsDto } from './dto/upsert-term.dto';
 import { EventTermsRepository } from './event-terms.repository';
@@ -13,17 +17,26 @@ export class EventTermsService {
 
   async syncEventTerms(
     eventId: string,
-    userId: string,
+    user: User,
     { terms }: SyncEventTermsDto,
     files: Express.Multer.File[],
     fileIndices: number[] = [],
   ) {
-    await this.repo.assertEventExists(eventId);
+    const event = await this.repo.getEventWithAccess(eventId);
+
+    const hasAccess =
+      user.role === Role.MASTER ||
+      event?.createdBy === user.id ||
+      event?.eventDashboardAccess.some((access) => access.userId === user.id);
+
+    if (!hasAccess) {
+      throw new ForbiddenException(
+        'Você não tem permissão para editar os termos deste evento.',
+      );
+    }
 
     const existingTerms = await this.repo.findByEvent(eventId);
-
     const receivedIds = terms.filter((t) => t.id).map((t) => t.id as string);
-
     const deleteIds = existingTerms
       .filter((t) => !receivedIds.includes(t.id))
       .map((t) => t.id);
@@ -52,15 +65,13 @@ export class EventTermsService {
           file.originalname,
           file.buffer,
           'public',
-          userId,
+          user.id,
         );
-
         createPayload.push({
           title: term.title,
           isObligatory: term.isObligatory,
           fileUrl: url,
         });
-
         additionalDeleteIds.push(term.id);
       } else if (term.id && !file) {
         updatePayload.push({
@@ -74,14 +85,12 @@ export class EventTermsService {
             `File not provided for new term at index ${i}`,
           );
         }
-
         const { url } = await this.blob.uploadFile(
           file.originalname,
           file.buffer,
           'public',
-          userId,
+          user.id,
         );
-
         createPayload.push({
           title: term.title,
           isObligatory: term.isObligatory,
