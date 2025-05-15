@@ -149,6 +149,10 @@ export class EventRepository {
         bracket: true,
         address: true,
         ranking: true,
+        terms: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
