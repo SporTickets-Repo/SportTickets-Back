@@ -448,6 +448,25 @@ export class CheckoutRepository {
       data: { status, refundedAt: new Date() },
     });
   }
+
+  async getCustomTextByTicketTypeId(
+    ticketTypeId: string,
+  ): Promise<string | null> {
+    const event = await this.prisma.event.findFirst({
+      where: {
+        ticketTypes: {
+          some: {
+            id: ticketTypeId,
+          },
+        },
+      },
+      select: {
+        emailCustomText: true,
+      },
+    });
+
+    return event?.emailCustomText ?? null;
+  }
 }
 
 function mapStatus(externalStatus: string): TransactionStatus {

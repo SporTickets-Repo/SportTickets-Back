@@ -157,9 +157,14 @@ export class CheckoutService {
       throw new NotFoundException('Transaction not found.');
     }
 
+    const customText =
+      await this.checkoutRepository.getCustomTextByTicketTypeId(
+        transaction.tickets[0].ticketLot.ticketTypeId,
+      );
+
     for (const ticket of transaction.tickets as TicketWithRelations[]) {
       if (!ticket.deliveredAt) {
-        await this.emailService.sendTicketConfirmation(ticket);
+        await this.emailService.sendTicketConfirmation(ticket, customText);
         await this.checkoutRepository.markTicketAsDeliveredAndUpdateSoldQuantity(
           ticket.id,
         );

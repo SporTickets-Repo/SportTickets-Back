@@ -158,6 +158,15 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
+    example: 'Texto personalizado para o e-mail de confirmação de ingresso',
+    description: 'Texto personalizado para o e-mail de confirmação de ingresso',
+    required: false,
+  })
+  emailCustomText?: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
     example: 'Informações adicionais sobre o evento',
     description: 'Informações adicionais sobre o evento',
     required: false,
