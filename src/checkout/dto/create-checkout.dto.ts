@@ -114,7 +114,9 @@ export class CreateCheckoutDto {
   @Type(() => PaymentDataDto)
   paymentData: PaymentDataDto;
 
-  @ValidateNested()
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => TermsDto)
-  terms: TermsDto[];
+  @IsOptional()
+  terms?: TermsDto[];
 }
