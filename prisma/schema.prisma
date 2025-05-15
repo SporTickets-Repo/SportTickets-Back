@@ -79,8 +79,8 @@ model Term {
   isObligatory Boolean
   fileUrl      String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
   event                  Event                    @relation(fields: [eventId], references: [id])
   TermTicketConfirmation TermTicketConfirmation[]
