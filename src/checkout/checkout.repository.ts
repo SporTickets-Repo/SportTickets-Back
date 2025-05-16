@@ -442,6 +442,11 @@ export class CheckoutRepository {
         ticketTypeId: true,
         quantity: true,
         soldQuantity: true,
+        ticketType: {
+          select: {
+            eventId: true,
+          },
+        },
       },
     });
   }
@@ -453,9 +458,9 @@ export class CheckoutRepository {
     });
   }
 
-  findCouponById(id: string) {
+  findCouponById(id: string, eventId: string) {
     return this.prisma.coupon.findUnique({
-      where: { id },
+      where: { id, deletedAt: null, eventId: eventId },
       select: {
         id: true,
         name: true,

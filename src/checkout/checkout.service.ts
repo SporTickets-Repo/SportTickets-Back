@@ -233,14 +233,42 @@ export class CheckoutService {
       await this.validateCategories(categoryCounts);
     }
 
-    if (couponId) {
-      const coupon = await this.checkoutRepository.findCouponById(couponId);
+    if (couponId && lots.length > 0) {
+      const eventIds = new Set(
+        lots.map((lot) => lot.ticketType?.eventId).filter(Boolean),
+      );
+
+      if (eventIds.size === 0) {
+        this.logger.warn(`No eventId found in lots for coupon validation.`);
+        throw new BadRequestException(
+          'Unable to validate coupon without event context.',
+        );
+      }
+
+      if (eventIds.size > 1) {
+        this.logger.warn(
+          `Multiple eventIds found in lots. Coupon must be used in a single event context.`,
+        );
+
+        throw new BadRequestException(
+          'Coupon cannot be used across multiple events.',
+        );
+      }
+
+      const [eventId] = eventIds;
+
+      const coupon = await this.checkoutRepository.findCouponById(
+        couponId,
+        eventId,
+      );
+
       if (!coupon || coupon.deletedAt || !coupon.isActive) {
         this.logger.warn(
           `Invalid or inactive coupon used | Coupon ID: ${couponId}`,
         );
         throw new BadRequestException('Invalid or inactive coupon.');
       }
+
       const available = coupon.quantity - coupon.soldQuantity;
       if (couponCount! > available) {
         this.logger.warn(`Coupon limit exceeded | Coupon: ${coupon.name}`);
