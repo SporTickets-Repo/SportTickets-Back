@@ -4,7 +4,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateRandomCode } from 'src/utils/generate';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
-import { TeamDto } from './dto/create-free-checkout.dto';
+import {
+  TeamDto as FreeTeamDto,
+  TermsDto as FreeTermsDto,
+} from './dto/create-free-checkout.dto';
 import { MercadoPagoPaymentResponse } from './dto/mercado-pago-payment-response';
 
 @Injectable()
@@ -14,6 +17,7 @@ export class CheckoutRepository {
 
   async performCheckout(dto: CreateCheckoutDto, user: User) {
     const { teams, couponId } = dto;
+    const termIds = dto.terms?.map((t) => t.termId) ?? [];
     const now = new Date();
 
     return this.prisma.$transaction(async (tx) => {
@@ -88,6 +92,15 @@ export class CheckoutRepository {
             })),
           });
 
+          if (termIds.length) {
+            await tx.termTicketConfirmation.createMany({
+              data: termIds.map((termId) => ({
+                termId,
+                ticketId: ticket.id,
+              })),
+            });
+          }
+
           totalValue = totalValue.add(ticketPrice);
         }
       }
@@ -140,7 +153,12 @@ export class CheckoutRepository {
     });
   }
 
-  async performFreeCheckout(team: TeamDto, user: User) {
+  async performFreeCheckout(
+    team: FreeTeamDto,
+    user: User,
+    terms?: FreeTermsDto[],
+  ) {
+    const termIds = terms?.map((t) => t.termId) ?? [];
     const now = new Date();
 
     return this.prisma.$transaction(async (tx) => {
@@ -191,12 +209,21 @@ export class CheckoutRepository {
         });
 
         await tx.personalizedFieldAnswer.createMany({
-          data: (player.personalFields ?? []).map((f) => ({
+          data: (player.personalFields ?? []).map((pf) => ({
             ticketId: ticket.id,
-            personalizedFieldId: f.personalizedFieldId,
-            answer: f.answer,
+            personalizedFieldId: pf.personalizedFieldId,
+            answer: pf.answer,
           })),
         });
+
+        if (termIds.length) {
+          await tx.termTicketConfirmation.createMany({
+            data: termIds.map((termId) => ({
+              termId,
+              ticketId: ticket.id,
+            })),
+          });
+        }
       }
 
       return transaction;
@@ -267,9 +294,7 @@ export class CheckoutRepository {
               },
             },
             category: true,
-            team: {
-              include: { tickets: { include: { user: true } } },
-            },
+            team: { include: { tickets: { include: { user: true } } } },
             coupon: true,
             personalizedFieldAnswers: { include: { personalizedField: true } },
           },

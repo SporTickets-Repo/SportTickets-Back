@@ -10,6 +10,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { lookup } from 'mime-types';
 import { AppConfigService } from '../config/config.service';
 
 @Injectable()
@@ -66,12 +67,14 @@ export class BlobService {
     const url = `https://${this.bucket}.s3.amazonaws.com/${encodeURIComponent(key)}`;
 
     try {
+      const mimeType = lookup(fileName) || 'application/octet-stream';
+
       await this.s3.send(
         new PutObjectCommand({
           Bucket: this.bucket,
           Key: key,
           Body: content,
-          ContentType: 'application/octet-stream',
+          ContentType: mimeType,
           ContentLength: content.length,
           ACL: 'public-read',
         }),

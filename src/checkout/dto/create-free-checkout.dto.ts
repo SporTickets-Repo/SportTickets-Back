@@ -30,6 +30,10 @@ class PlayerDto {
   personalFields?: PersonalizedFieldDto[];
 }
 
+export class TermsDto {
+  @IsUUID()
+  termId: string;
+}
 export class TeamDto {
   @IsUUID()
   ticketTypeId: string;
@@ -44,4 +48,10 @@ export class CreateFreeCheckoutDto {
   @ValidateNested()
   @Type(() => TeamDto)
   team: TeamDto;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TermsDto)
+  @IsOptional()
+  terms?: TermsDto[];
 }

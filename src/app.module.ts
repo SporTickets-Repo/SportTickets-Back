@@ -10,6 +10,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { CouponModule } from './coupon/coupon.module';
 import { CronJobsModule } from './cron-job/cron-job.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { EventTermsModule } from './event-terms/event-terms.module';
 import { EventModule } from './event/event.module';
 import { PaymentModule } from './payment/payment.module';
 import { PersonalizedFieldsModule } from './personalized-fields/personalized-fields.module';
@@ -42,6 +43,7 @@ import { UserModule } from './user/user.module';
     TicketModule,
     ScheduleModule.forRoot(),
     CronJobsModule,
+    EventTermsModule,
   ],
   controllers: [AppController],
   providers: [PrismaService, AppService],

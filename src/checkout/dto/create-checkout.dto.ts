@@ -95,6 +95,11 @@ class PaymentDataDto {
   cardData?: CardDataDto;
 }
 
+class TermsDto {
+  @IsUUID()
+  termId: string;
+}
+
 export class CreateCheckoutDto {
   @IsArray()
   @ValidateNested({ each: true })
@@ -108,4 +113,10 @@ export class CreateCheckoutDto {
   @ValidateNested()
   @Type(() => PaymentDataDto)
   paymentData: PaymentDataDto;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TermsDto)
+  @IsOptional()
+  terms?: TermsDto[];
 }
