@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Country, DocumentType, User } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -150,12 +150,16 @@ export class UserService {
     const sanitizedEmail = registerUserDto.email.toLowerCase();
     const sanitizedPhone = registerUserDto.phone?.replace(/\D/g, '');
     const sanitizedCep = registerUserDto.cep.replace(/\D/g, '');
-    const sanitizedDocument = registerUserDto.document.replace(/\D/g, '');
+    const sanitizedDocument = registerUserDto.document
+      ? registerUserDto.document.replace(/\D/g, '')
+      : undefined;
 
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([
         this.userRepository.findUserByEmailRegister(sanitizedEmail),
-        this.userRepository.findUserByDocument(sanitizedDocument),
+        sanitizedDocument
+          ? this.userRepository.findUserByDocument(sanitizedDocument)
+          : Promise.resolve(null),
         this.userRepository.findUserByPhone(sanitizedPhone),
       ]);
 
@@ -168,9 +172,13 @@ export class UserService {
       email: sanitizedEmail,
       phone: sanitizedPhone,
       cep: sanitizedCep,
-      document: sanitizedDocument,
+      document: sanitizedDocument ?? null,
+      country: registerUserDto.country,
       bornAt: new Date(registerUserDto.bornAt),
-      documentType: 'CPF',
+      documentType:
+        registerUserDto.country === Country.BRAZIL
+          ? DocumentType.CPF
+          : DocumentType.NONE,
       password: '',
       role: 'USER',
       profileImageUrl: null,
@@ -188,6 +196,7 @@ export class UserService {
       email: newUser.email,
       phone: newUser.phone,
       name: newUser.name,
+      country: newUser.country,
       profileImageUrl: newUser.profileImageUrl,
       sex: newUser.sex,
     };
