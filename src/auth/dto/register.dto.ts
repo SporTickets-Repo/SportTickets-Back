@@ -1,7 +1,13 @@
 import { Optional } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex } from '@prisma/client';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { Country, Sex } from '@prisma/client';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class RegisterDto {
   @IsNotEmpty()
@@ -9,7 +15,8 @@ export class RegisterDto {
   @ApiProperty({ example: 'John Doe', description: 'User full name.' })
   name: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @ValidateIf((o) => o.country === Country.BRAZIL)
   @IsString()
   @ApiProperty({ example: '123.456.789-00', description: 'User document.' })
   document: string;
@@ -18,6 +25,10 @@ export class RegisterDto {
   @IsEmail()
   @ApiProperty({ example: 'johndoe@example.com', description: 'User email.' })
   email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  country: Country;
 
   @IsNotEmpty()
   @IsString()

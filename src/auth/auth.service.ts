@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { Country, DocumentType, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { EmailService } from 'src/email/email.service';
 import { RedisService } from 'src/redis/redis.service';
@@ -78,12 +78,16 @@ export class AuthService {
     const sanitizedEmail = registerDto.email.toLowerCase();
     const sanitizedPhone = registerDto.phone?.replace(/\D/g, '');
     const sanitizedCep = registerDto.cep.replace(/\D/g, '');
-    const sanitizedDocument = registerDto.document.replace(/\D/g, '');
+    const sanitizedDocument = registerDto.document
+      ? registerDto.document.replace(/\D/g, '')
+      : undefined;
 
     const [existingByEmail, existingByDocument, existingByPhone] =
       await Promise.all([
         this.authRepository.findUserByEmail(sanitizedEmail),
-        this.authRepository.findUserByDocument(sanitizedDocument),
+        sanitizedDocument
+          ? this.authRepository.findUserByDocument(sanitizedDocument)
+          : Promise.resolve(null),
         sanitizedPhone
           ? this.authRepository.findUserByPhone(sanitizedPhone)
           : Promise.resolve(null),
@@ -101,7 +105,12 @@ export class AuthService {
       ...userData,
       email: sanitizedEmail,
       phone: sanitizedPhone,
+      country: registerDto.country,
       cep: sanitizedCep,
+      documentType:
+        registerDto.country === Country.BRAZIL
+          ? DocumentType.CPF
+          : DocumentType.NONE,
       document: sanitizedDocument,
       password: hashedPassword,
       bornAt: new Date(userData.bornAt),
