@@ -8,6 +8,7 @@ import { EventStatus, Prisma } from '@prisma/client';
 import { BlobService } from 'src/blob/blob.service';
 import { FilterEventsDto } from './dto/filter-events.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { UpdatePaymentSettingsDto } from './dto/update-payment-settings.dto';
 import { EventRepository } from './event.repository';
 
 @Injectable()
@@ -240,6 +241,22 @@ export class EventService {
     const updatedEvent = await this.eventRepository.updateEvent(eventId, {
       eventFee,
     });
+    return updatedEvent;
+  }
+
+  async updatePaymentSettings(
+    eventId: string,
+    updatePaymentSettingsDto: UpdatePaymentSettingsDto,
+  ) {
+    const event = await this.eventRepository.findEventById(eventId);
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const updatedEvent = await this.eventRepository.updateEvent(
+      eventId,
+      updatePaymentSettingsDto,
+    );
     return updatedEvent;
   }
 }

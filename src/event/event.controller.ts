@@ -26,6 +26,7 @@ import { GetAllEventsDto } from './dto/get-all-events.dto';
 import { GetEventByIdDto } from './dto/get-event-by-id.dto';
 import { GetEventBySlugDto } from './dto/get-event-by-slug.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { UpdatePaymentSettingsDto } from './dto/update-payment-settings.dto';
 import { EventService } from './event.service';
 
 @ApiBearerAuth()
@@ -140,6 +141,18 @@ export class EventController {
     return this.eventService.updateEventFee(
       eventId,
       updateEventFeeDto.eventFee,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Put(':eventId/payment-settings')
+  async updatePaymentSettings(
+    @Param('eventId') eventId: string,
+    @Body() updatePaymentSettingsDto: UpdatePaymentSettingsDto,
+  ) {
+    return this.eventService.updatePaymentSettings(
+      eventId,
+      updatePaymentSettingsDto,
     );
   }
 }
