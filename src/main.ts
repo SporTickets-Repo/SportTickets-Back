@@ -12,6 +12,8 @@ async function bootstrap() {
       'http://localhost:3000',
       'https://beta.sportickets.com.br',
       'https://spor-tickets-front.vercel.app',
+      'https://sportickets.com.br',
+      'https://www.sportickets.com.br',
     ],
     credentials: true,
   });
