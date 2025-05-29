@@ -13,12 +13,13 @@ model User {
   id              String       @id @default(uuid()) @db.Uuid
   email           String       @unique
   phone           String?      @unique
-  document        String       @unique
-  documentType    DocumentType @default(CPF)
+  document        String?       @unique
+  documentType    DocumentType? @default(NONE)
   name            String
   password        String
   sex             Sex          @default(FEMALE)
   role            Role         @default(USER)
+  country         Country      @default(BRAZIL)
   bornAt          DateTime?
   cep             String?
   profileImageUrl String?
@@ -43,6 +44,8 @@ model Event {
   status         EventStatus   @default(DRAFT)
   type           EventType     @default(GENERAL)
   level          EventLevel    @default(GENERAL)
+  country        Country       @default(BRAZIL)
+  currency       Currency      @default(BRL)
   name           String?
   place          String?
   description    String?
@@ -297,8 +300,19 @@ enum Sex {
   FEMALE
 }
 
+enum Country {
+  BRAZIL
+  AUSTRALIA
+}
+
+enum Currency {
+  BRL
+  AUD
+}
+
 enum DocumentType {
   CPF
+  NONE
 }
 
 enum EventStatus {
@@ -355,6 +369,7 @@ enum PaymentMethod {
   PIX
   CREDIT_CARD
   BOLETO
+  STRIPE
   FREE
 }
 
