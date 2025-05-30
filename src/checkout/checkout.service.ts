@@ -8,6 +8,7 @@ import {
 import { TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { EmailService } from 'src/email/email.service';
+import Stripe from 'stripe';
 import { PaymentService } from '../payment/payment.service';
 import { CheckoutRepository } from './checkout.repository';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
@@ -205,6 +206,18 @@ export class CheckoutService {
 
   async updatePaymentStatus(gatewayResponse: MercadoPagoPaymentResponse) {
     return this.checkoutRepository.updateCheckoutTransaction(gatewayResponse);
+  }
+
+  async updateStripePaymentStatus(
+    transactionId: string,
+    paymentIntentId: string,
+    status: Stripe.PaymentIntent.Status,
+  ) {
+    return this.checkoutRepository.updateStripeCheckoutTransaction(
+      transactionId,
+      paymentIntentId,
+      status,
+    );
   }
 
   private async validateLotsAndCategories(

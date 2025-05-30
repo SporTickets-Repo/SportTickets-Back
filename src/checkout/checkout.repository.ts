@@ -3,6 +3,7 @@ import { Prisma, TransactionStatus, User } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateRandomCode } from 'src/utils/generate';
+import Stripe from 'stripe';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import {
   TeamDto as FreeTeamDto,
@@ -273,6 +274,29 @@ export class CheckoutRepository {
     return this.prisma.transaction.update({
       where: { id: gateway.external_reference },
       data,
+    });
+  }
+
+  async updateStripeCheckoutTransaction(
+    transactionId: string,
+    paymentIntentId: string,
+    status: Stripe.PaymentIntent.Status,
+  ) {
+    const prismaStatus =
+      status === 'succeeded'
+        ? TransactionStatus.APPROVED
+        : status === 'requires_payment_method'
+          ? TransactionStatus.REJECTED
+          : TransactionStatus.PENDING;
+
+    return this.prisma.transaction.update({
+      where: { id: transactionId },
+      data: {
+        externalPaymentId: paymentIntentId,
+        externalStatus: status,
+        status: prismaStatus,
+        paidAt: status === 'succeeded' ? new Date() : undefined,
+      },
     });
   }
 

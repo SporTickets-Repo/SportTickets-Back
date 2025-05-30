@@ -53,6 +53,14 @@ export class AppConfigService {
     return this.configService.get<string>('MP_ACCESS_TOKEN') || '';
   }
 
+  get stripeToken(): string {
+    return this.configService.get<string>('STRIPE_SECRET_KEY') || '';
+  }
+
+  get stripeWebhookSecret(): string {
+    return this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
+  }
+
   get backendUrl(): string {
     return this.configService.get<string>('BACKEND_URL') || '';
   }

@@ -93,6 +93,10 @@ class PaymentDataDto {
   @ValidateNested()
   @Type(() => CardDataDto)
   cardData?: CardDataDto;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
 }
 
 class TermsDto {

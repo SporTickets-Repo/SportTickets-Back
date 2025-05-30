@@ -1,23 +1,32 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { PaymentMethod } from '@prisma/client';
 import { CreateCheckoutDto } from 'src/checkout/dto/create-checkout.dto';
 import { MercadoPagoPaymentResponse } from 'src/checkout/dto/mercado-pago-payment-response';
 import { MercadoPagoGateway } from './gateway/mercado-pago-gateway.service';
-import { PaymentGateway } from './payment-gateway.interface';
+import { StripeGateway } from './gateway/stripe-gateway.service';
 
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
-  constructor(private readonly mercadoPagoGateway: MercadoPagoGateway) {}
+  constructor(
+    private readonly mercadoPagoGateway: MercadoPagoGateway,
+    private stripeGateway: StripeGateway,
+  ) {}
 
   async processPayment(
     checkoutResult: any,
     dto: CreateCheckoutDto,
   ): Promise<any> {
-    let gateway: PaymentGateway;
-
-    gateway = this.mercadoPagoGateway;
-
-    return gateway.processPayment(checkoutResult, dto);
+    switch (dto.paymentData.paymentMethod) {
+      case PaymentMethod.PIX:
+      case PaymentMethod.CREDIT_CARD:
+      case PaymentMethod.BOLETO:
+        return this.mercadoPagoGateway.processPayment(checkoutResult, dto);
+      case PaymentMethod.STRIPE:
+        return this.stripeGateway.processPayment(checkoutResult, dto);
+      default:
+        throw new BadRequestException('Gateway não suportado.');
+    }
   }
 
   async fetchMercadoPagoPayment(
