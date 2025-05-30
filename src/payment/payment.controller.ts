@@ -1,13 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  HttpCode,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
 import { TransactionStatus } from '@prisma/client';
 import { CheckoutService } from 'src/checkout/checkout.service';
 import { PaymentService } from 'src/payment/payment.service';
@@ -29,7 +20,7 @@ export class PaymentController {
 
     if (!paymentId || type !== 'payment') {
       this.logger.warn(`Invalid webhook | type=${type} id=${paymentId}`);
-      throw new BadRequestException('Invalid webhook payload.');
+      return;
     }
 
     this.logger.log(`Webhook received | id=${paymentId}`);
@@ -37,9 +28,10 @@ export class PaymentController {
     try {
       const paymentData =
         await this.paymentService.fetchMercadoPagoPayment(paymentId);
+
       if (!paymentData) {
         this.logger.error(`Payment not found | id=${paymentId}`);
-        throw new NotFoundException('Payment data not found.');
+        return;
       }
 
       const updatedTransaction =
@@ -47,7 +39,7 @@ export class PaymentController {
 
       if (!updatedTransaction) {
         this.logger.error(`Tx update failed | payment=${paymentData.id}`);
-        throw new InternalServerErrorException('Failed to update transaction.');
+        return;
       }
 
       await this.handleTransactionByStatus(
@@ -58,15 +50,7 @@ export class PaymentController {
       return { message: 'Webhook processed.' };
     } catch (error) {
       this.logger.error(`Webhook error | ${error.message}`, error.stack);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Unexpected error processing webhook.',
-      );
+      return;
     }
   }
 
